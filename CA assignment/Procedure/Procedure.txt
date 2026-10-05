@@ -1,0 +1,1645 @@
+Procedure
+
+
+CHECK_SAVED_PHONE_MATCH PROC
+
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+    PUSH DI
+
+    ; Offset = viewBookingIndex * 17
+    XOR AX,AX
+    MOV AL,viewBookingIndex
+    MOV BX,17
+    MUL BX
+    MOV SI,AX
+
+    LEA DI,BOOKING_PHONE_LIST
+    ADD DI,SI
+    MOV SI,DI
+
+    ; Compare phone length first
+    MOV AL,[SI+1]
+    CMP AL,[CUSTOMER_PHONE+1]
+    JNE PHONE_MATCH_NO
+
+    MOV CL,[CUSTOMER_PHONE+1]
+    MOV CH,0
+    ADD SI,2
+    LEA DI,CUSTOMER_PHONE+2
+    REPE CMPSB
+    JNE PHONE_MATCH_NO
+
+    MOV AL,1
+    JMP PHONE_MATCH_DONE
+
+PHONE_MATCH_NO:
+    MOV AL,0
+
+PHONE_MATCH_DONE:
+    POP DI
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    RET
+
+CHECK_SAVED_PHONE_MATCH ENDP
+
+
+; ==============================
+; PRINT SAVED CUSTOMER RECEIPT
+; Uses viewBookingIndex as the matched booking
+; ==============================
+
+PRINT_SAVED_RECEIPT PROC
+
+    ; Clear screen
+    MOV AH,00H
+    MOV AL,03H
+    INT 10H
+
+    MOV AH,09H
+    LEA DX,receiptTitle
+    INT 21H
+
+    ; Booking number
+    MOV AH,09H
+    LEA DX,receiptBookingNoMsg
+    INT 21H
+    XOR AX,AX
+    MOV AL,viewBookingIndex
+    INC AL
+    CALL PRINT_NUMBER
+
+    ; Saved booking date
+    MOV AH,09H
+    LEA DX,receiptDateMsg
+    INT 21H
+    CALL PRINT_SAVED_DATE
+
+    ; Saved booking time
+    MOV AH,09H
+    LEA DX,receiptTimeMsg
+    INT 21H
+    XOR BX,BX
+    MOV BL,viewBookingIndex
+    MOV AL,BOOKING_TIME_LIST[BX]
+    CALL PRINT_TIME_SLOT
+
+    ; Customer name
+    MOV AH,09H
+    LEA DX,receiptCustomerMsg
+    INT 21H
+    XOR AX,AX
+    MOV AL,viewBookingIndex
+    MOV BX,32
+    MUL BX
+    MOV SI,AX
+    LEA DI,BOOKING_CUSTOMER_LIST
+    ADD DI,SI
+    MOV SI,DI
+    CALL PRINT_BUFFER
+
+    ; Phone number
+    MOV AH,09H
+    LEA DX,receiptPhoneMsg
+    INT 21H
+    XOR AX,AX
+    MOV AL,viewBookingIndex
+    MOV BX,17
+    MUL BX
+    MOV SI,AX
+    LEA DI,BOOKING_PHONE_LIST
+    ADD DI,SI
+    MOV SI,DI
+    CALL PRINT_BUFFER
+
+    ; Venue
+    MOV AH,09H
+    LEA DX,receiptVenueMsg
+    INT 21H
+    XOR AX,AX
+    MOV AL,viewBookingIndex
+    MOV BX,32
+    MUL BX
+    MOV SI,AX
+    LEA DI,BOOKING_VENUE_LIST
+    ADD DI,SI
+    MOV SI,DI
+    CALL PRINT_BUFFER
+
+    MOV AH,09H
+    LEA DX,receiptSeparatorMsg
+    INT 21H
+
+    ; Unit price
+    MOV AH,09H
+    LEA DX,receiptUnitPriceMsg
+    INT 21H
+    XOR BX,BX
+    MOV BL,viewBookingIndex
+    SHL BX,1
+    MOV AX,BOOKING_PRICE_LIST[BX]
+    CALL PRINT_NUMBER
+
+    ; Quantity
+    MOV AH,09H
+    LEA DX,receiptQuantityMsg
+    INT 21H
+    MOV AX,BOOKING_QUANTITY_LIST[BX]
+    CALL PRINT_NUMBER
+
+    ; Subtotal
+    MOV AH,09H
+    LEA DX,receiptSubtotalMsg
+    INT 21H
+    MOV AX,BOOKING_SUBTOTAL_LIST[BX]
+    CALL PRINT_NUMBER
+
+    ; Service charge
+    MOV AH,09H
+    LEA DX,receiptServiceMsg
+    INT 21H
+    MOV AX,BOOKING_SERVICE_LIST[BX]
+    CALL PRINT_NUMBER
+
+    ; Total
+    MOV AH,09H
+    LEA DX,receiptTotalMsg
+    INT 21H
+    MOV AX,BOOKING_TOTAL_LIST[BX]
+    CALL PRINT_NUMBER
+
+    ; Amount paid
+    MOV AH,09H
+    LEA DX,receiptPaidMsg
+    INT 21H
+    MOV AX,BOOKING_PAID_LIST[BX]
+    CALL PRINT_NUMBER
+
+    ; Change
+    MOV AH,09H
+    LEA DX,receiptChangeMsg
+    INT 21H
+    MOV AX,BOOKING_CHANGE_LIST[BX]
+    CALL PRINT_NUMBER
+
+    MOV AH,09H
+    LEA DX,receiptThanksMsg
+    INT 21H
+
+    RET
+
+PRINT_SAVED_RECEIPT ENDP
+
+
+; ==============================
+; CHECK CURRENT VENUE CAPACITY
+; Returns:
+;   CF = 0 -> capacity available
+;   CF = 1 -> capacity is 0
+; ==============================
+
+CHECK_CURRENT_CAPACITY PROC
+
+    PUSH SI
+
+    MOV SI,CURRENT_CAPACITY
+    CALL BUFFER_TO_NUMBER
+
+    CMP AX,0
+    JE CAPACITY_ZERO
+
+    CLC
+    POP SI
+    RET
+
+CAPACITY_ZERO:
+    STC
+    POP SI
+    RET
+
+CHECK_CURRENT_CAPACITY ENDP
+
+
+; ==============================
+; DECREASE CURRENT VENUE CAPACITY
+; Reduce capacity by the booked quantity
+; ==============================
+
+DECREASE_CURRENT_CAPACITY PROC
+
+    PUSH AX
+    PUSH BX
+    PUSH SI
+
+    MOV SI,CURRENT_CAPACITY
+    CALL BUFFER_TO_NUMBER
+
+    CMP AX,0
+    JE DECREASE_CAPACITY_DONE
+
+    SUB AX,BOOKING_QUANTITY
+
+    MOV SI,CURRENT_CAPACITY
+    CALL NUMBER_TO_BUFFER
+
+DECREASE_CAPACITY_DONE:
+
+    POP SI
+    POP BX
+    POP AX
+    RET
+
+DECREASE_CURRENT_CAPACITY ENDP
+
+
+; ==============================
+; CONVERT AX TO NUMBER BUFFER
+; SI = target buffer
+; ==============================
+
+NUMBER_TO_BUFFER PROC
+
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH DI
+
+    MOV DI,SI
+
+    XOR CX,CX
+    MOV BX,10
+
+    CMP AX,0
+    JNE NUMBER_TO_BUFFER_DIVIDE
+
+    MOV BYTE PTR [DI+1],1
+    MOV BYTE PTR [DI+2],'0'
+    JMP NUMBER_TO_BUFFER_DONE
+
+NUMBER_TO_BUFFER_DIVIDE:
+    XOR DX,DX
+    DIV BX
+    PUSH DX
+    INC CX
+    CMP AX,0
+    JNE NUMBER_TO_BUFFER_DIVIDE
+
+    MOV [DI+1],CL
+    ADD DI,2
+
+NUMBER_TO_BUFFER_OUTPUT:
+    POP DX
+    ADD DL,'0'
+    MOV [DI],DL
+    INC DI
+    LOOP NUMBER_TO_BUFFER_OUTPUT
+
+NUMBER_TO_BUFFER_DONE:
+    POP DI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+
+NUMBER_TO_BUFFER ENDP
+
+
+SET_VENUE1 PROC
+
+    LEA AX,VENUE1_NAME
+    MOV CURRENT_NAME,AX
+
+    LEA AX,VENUE1_PRICE
+    MOV CURRENT_PRICE,AX
+
+    LEA AX,VENUE1_CAPACITY
+    MOV CURRENT_CAPACITY,AX
+
+    RET
+
+SET_VENUE1 ENDP
+
+
+; ==============================
+; SET VENUE 2
+; ==============================
+
+SET_VENUE2 PROC
+
+    LEA AX,VENUE2_NAME
+    MOV CURRENT_NAME,AX
+
+    LEA AX,VENUE2_PRICE
+    MOV CURRENT_PRICE,AX
+
+    LEA AX,VENUE2_CAPACITY
+    MOV CURRENT_CAPACITY,AX
+
+    RET
+
+SET_VENUE2 ENDP
+
+
+; ==============================
+; SET VENUE 3
+; ==============================
+
+SET_VENUE3 PROC
+
+    LEA AX,VENUE3_NAME
+    MOV CURRENT_NAME,AX
+
+    LEA AX,VENUE3_PRICE
+    MOV CURRENT_PRICE,AX
+
+    LEA AX,VENUE3_CAPACITY
+    MOV CURRENT_CAPACITY,AX
+
+    RET
+
+SET_VENUE3 ENDP
+
+
+; ==============================
+; INPUT VENUE
+; ==============================
+
+INPUT_VENUE PROC
+
+    MOV AH,09H
+    LEA DX,addTitle
+    INT 21H
+
+    MOV SI,CURRENT_NAME
+    LEA DX,venueNameMsg
+    CALL READ_TEXT
+
+INPUT_PRICE_AGAIN:
+    MOV SI,CURRENT_PRICE
+    LEA DX,venuePriceMsg
+    CALL READ_NUMBER
+
+    MOV SI,CURRENT_PRICE
+    CALL BUFFER_TO_NUMBER
+    CMP AX,0
+    JNE INPUT_CAPACITY
+
+    MOV AH,09H
+    LEA DX,positiveNumberMsg
+    INT 21H
+    JMP INPUT_PRICE_AGAIN
+
+INPUT_CAPACITY:
+INPUT_CAPACITY_AGAIN:
+    MOV SI,CURRENT_CAPACITY
+    LEA DX,venueCapacityMsg
+    CALL READ_NUMBER
+
+    MOV SI,CURRENT_CAPACITY
+    CALL BUFFER_TO_NUMBER
+    CMP AX,0
+    JNE INPUT_VENUE_DONE
+
+    MOV AH,09H
+    LEA DX,positiveNumberMsg
+    INT 21H
+    JMP INPUT_CAPACITY_AGAIN
+
+INPUT_VENUE_DONE:
+    RET
+
+INPUT_VENUE ENDP
+
+
+; ==============================
+; READ TEXT WITH VALIDATION
+; ==============================
+
+READ_TEXT PROC
+
+    PUSH AX
+    PUSH DX
+    PUSH SI
+    PUSH DI
+
+    MOV DI,DX
+
+
+TEXT_AGAIN:
+
+    MOV BYTE PTR [SI+1],0
+
+
+    MOV AH,09H
+    MOV DX,DI
+    INT 21H
+
+
+    MOV AH,0AH
+    MOV DX,SI
+    INT 21H
+
+
+    CMP BYTE PTR [SI+1],0
+    JNE TEXT_OK
+
+
+    MOV AH,09H
+    LEA DX,nameErrorMsg
+    INT 21H
+
+    JMP TEXT_AGAIN
+
+
+TEXT_OK:
+
+    POP DI
+    POP SI
+    POP DX
+    POP AX
+
+    RET
+
+READ_TEXT ENDP
+
+
+; ==============================
+; READ NUMBER WITH VALIDATION
+; ==============================
+
+READ_NUMBER PROC
+
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+    PUSH DI
+    PUSH BP
+
+
+    MOV BP,SI
+    MOV DI,DX
+
+
+NUMBER_AGAIN:
+
+    MOV SI,BP
+
+    MOV BYTE PTR [SI+1],0
+
+
+    MOV AH,09H
+    MOV DX,DI
+    INT 21H
+
+
+    MOV AH,0AH
+    MOV DX,SI
+    INT 21H
+
+
+    MOV CL,[SI+1]
+    MOV CH,0
+
+
+    CMP CX,0
+    JE NUMBER_ERROR
+
+
+    ADD SI,2
+
+
+CHECK_DIGIT:
+
+    MOV BL,[SI]
+
+
+    CMP BL,'0'
+    JB NUMBER_ERROR
+
+
+    CMP BL,'9'
+    JA NUMBER_ERROR
+
+
+    INC SI
+    DEC CX
+
+
+    CMP CX,0
+    JNE CHECK_DIGIT
+
+
+    POP BP
+    POP DI
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+
+    RET
+
+
+NUMBER_ERROR:
+
+    MOV AH,09H
+    LEA DX,numberErrorMsg
+    INT 21H
+
+    JMP NUMBER_AGAIN
+
+
+READ_NUMBER ENDP
+
+
+
+; ==============================
+; CONVERT NUMBER BUFFER TO AX
+; Example: '500' -> AX = 500
+; ==============================
+
+BUFFER_TO_NUMBER PROC
+
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+
+    XOR AX,AX
+    MOV CL,[SI+1]
+    MOV CH,0
+    ADD SI,2
+
+BUFFER_NUMBER_LOOP:
+    CMP CX,0
+    JE BUFFER_NUMBER_DONE
+
+    MOV BX,10
+    MUL BX
+
+    MOV DL,[SI]
+    SUB DL,'0'
+    XOR DH,DH
+    ADD AX,DX
+
+    INC SI
+    DEC CX
+    JMP BUFFER_NUMBER_LOOP
+
+BUFFER_NUMBER_DONE:
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    RET
+
+BUFFER_TO_NUMBER ENDP
+
+
+; ==============================
+; PRINT NUMBER IN AX
+; ==============================
+
+PRINT_NUMBER PROC
+
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+
+    CMP AX,0
+    JNE PRINT_NUMBER_START
+
+    MOV DL,'0'
+    MOV AH,02H
+    INT 21H
+    JMP PRINT_NUMBER_DONE
+
+PRINT_NUMBER_START:
+    XOR CX,CX
+    MOV BX,10
+
+PRINT_NUMBER_DIVIDE:
+    XOR DX,DX
+    DIV BX
+    PUSH DX
+    INC CX
+    CMP AX,0
+    JNE PRINT_NUMBER_DIVIDE
+
+PRINT_NUMBER_OUTPUT:
+    POP DX
+    ADD DL,'0'
+    MOV AH,02H
+    INT 21H
+    LOOP PRINT_NUMBER_OUTPUT
+
+PRINT_NUMBER_DONE:
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+
+PRINT_NUMBER ENDP
+
+; ==============================
+; DISPLAY BOOKING VENUE LIST
+; CUSTOMER CAN SEE VENUE NAME + PRICE + CAPACITY
+; ==============================
+
+DISPLAY_BOOKING_VENUE_LIST PROC
+
+    ; VENUE 1
+    CMP VENUE1_EXIST,1
+    JNE BOOKING_LIST_VENUE2
+
+    MOV AH,09H
+    LEA DX,NEWLINE
+    INT 21H
+
+    MOV DL,'1'
+    MOV AH,02H
+    INT 21H
+    MOV DL,'.'
+    MOV AH,02H
+    INT 21H
+    MOV DL,' '
+    MOV AH,02H
+    INT 21H
+
+    LEA SI,VENUE1_NAME
+    CALL PRINT_BUFFER
+
+    MOV AH,09H
+    LEA DX,showPrice
+    INT 21H
+    LEA SI,VENUE1_PRICE
+    CALL PRINT_BUFFER
+
+    MOV AH,09H
+    LEA DX,showCapacity
+    INT 21H
+    LEA SI,VENUE1_CAPACITY
+    CALL PRINT_BUFFER
+
+    MOV AH,09H
+    LEA DX,NEWLINE
+    INT 21H
+
+
+BOOKING_LIST_VENUE2:
+
+    ; VENUE 2
+    CMP VENUE2_EXIST,1
+    JNE BOOKING_LIST_VENUE3
+
+    MOV AH,09H
+    LEA DX,NEWLINE
+    INT 21H
+
+    MOV DL,'2'
+    MOV AH,02H
+    INT 21H
+    MOV DL,'.'
+    MOV AH,02H
+    INT 21H
+    MOV DL,' '
+    MOV AH,02H
+    INT 21H
+
+    LEA SI,VENUE2_NAME
+    CALL PRINT_BUFFER
+
+    MOV AH,09H
+    LEA DX,showPrice
+    INT 21H
+    LEA SI,VENUE2_PRICE
+    CALL PRINT_BUFFER
+
+    MOV AH,09H
+    LEA DX,showCapacity
+    INT 21H
+    LEA SI,VENUE2_CAPACITY
+    CALL PRINT_BUFFER
+
+    MOV AH,09H
+    LEA DX,NEWLINE
+    INT 21H
+
+
+BOOKING_LIST_VENUE3:
+
+    ; VENUE 3
+    CMP VENUE3_EXIST,1
+    JNE BOOKING_LIST_DONE
+
+    MOV AH,09H
+    LEA DX,NEWLINE
+    INT 21H
+
+    MOV DL,'3'
+    MOV AH,02H
+    INT 21H
+    MOV DL,'.'
+    MOV AH,02H
+    INT 21H
+    MOV DL,' '
+    MOV AH,02H
+    INT 21H
+
+    LEA SI,VENUE3_NAME
+    CALL PRINT_BUFFER
+
+    MOV AH,09H
+    LEA DX,showPrice
+    INT 21H
+    LEA SI,VENUE3_PRICE
+    CALL PRINT_BUFFER
+
+    MOV AH,09H
+    LEA DX,showCapacity
+    INT 21H
+    LEA SI,VENUE3_CAPACITY
+    CALL PRINT_BUFFER
+
+    MOV AH,09H
+    LEA DX,NEWLINE
+    INT 21H
+
+
+BOOKING_LIST_DONE:
+    RET
+
+DISPLAY_BOOKING_VENUE_LIST ENDP
+
+
+; ==============================
+; DISPLAY VENUE NUMBER + NAME
+; REUSABLE FOR ADD / EDIT / DELETE
+; ==============================
+
+DISPLAY_VENUE_LIST PROC
+
+    ; VENUE 1
+    CMP VENUE1_EXIST,1
+    JNE LIST_VENUE2
+
+    MOV AH,09H
+    LEA DX,NEWLINE
+    INT 21H
+
+    MOV DL,'1'
+    MOV AH,02H
+    INT 21H
+
+    MOV DL,'.'
+    MOV AH,02H
+    INT 21H
+
+    MOV DL,' '
+    MOV AH,02H
+    INT 21H
+
+    LEA SI,VENUE1_NAME
+    CALL PRINT_BUFFER
+
+    MOV AH,09H
+    LEA DX,NEWLINE
+    INT 21H
+
+
+LIST_VENUE2:
+
+    ; VENUE 2
+    CMP VENUE2_EXIST,1
+    JNE LIST_VENUE3
+
+    MOV AH,09H
+    LEA DX,NEWLINE
+    INT 21H
+
+    MOV DL,'2'
+    MOV AH,02H
+    INT 21H
+
+    MOV DL,'.'
+    MOV AH,02H
+    INT 21H
+
+    MOV DL,' '
+    MOV AH,02H
+    INT 21H
+
+    LEA SI,VENUE2_NAME
+    CALL PRINT_BUFFER
+
+    MOV AH,09H
+    LEA DX,NEWLINE
+    INT 21H
+
+
+LIST_VENUE3:
+
+    ; VENUE 3
+    CMP VENUE3_EXIST,1
+    JNE LIST_DONE
+
+    MOV AH,09H
+    LEA DX,NEWLINE
+    INT 21H
+
+    MOV DL,'3'
+    MOV AH,02H
+    INT 21H
+
+    MOV DL,'.'
+    MOV AH,02H
+    INT 21H
+
+    MOV DL,' '
+    MOV AH,02H
+    INT 21H
+
+    LEA SI,VENUE3_NAME
+    CALL PRINT_BUFFER
+
+    MOV AH,09H
+    LEA DX,NEWLINE
+    INT 21H
+
+
+LIST_DONE:
+
+    RET
+
+DISPLAY_VENUE_LIST ENDP
+
+
+; ==============================
+; DISPLAY VENUE
+; ==============================
+
+DISPLAY_VENUE PROC
+
+    MOV AH,09H
+    LEA DX,NEWLINE
+    INT 21H
+
+    MOV DX,CURRENT_TITLE
+
+    MOV AH,09H
+    INT 21H
+
+
+    MOV AH,09H
+    LEA DX,showName
+    INT 21H
+
+    MOV SI,CURRENT_NAME
+    CALL PRINT_BUFFER
+
+
+    MOV AH,09H
+    LEA DX,showPrice
+    INT 21H
+
+    MOV SI,CURRENT_PRICE
+    CALL PRINT_BUFFER
+
+
+    MOV AH,09H
+    LEA DX,showCapacity
+    INT 21H
+
+    MOV SI,CURRENT_CAPACITY
+    CALL PRINT_BUFFER
+
+    RET
+
+DISPLAY_VENUE ENDP
+
+
+; ==============================
+; PRINT BUFFER
+; ==============================
+
+PRINT_BUFFER PROC
+
+    PUSH AX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+
+
+    MOV CL,[SI+1]
+    MOV CH,0
+
+    ADD SI,2
+
+
+PRINT_LOOP:
+
+    CMP CX,0
+    JE PRINT_DONE
+
+
+    MOV DL,[SI]
+
+    MOV AH,02H
+    INT 21H
+
+
+    INC SI
+    DEC CX
+
+    JMP PRINT_LOOP
+
+
+PRINT_DONE:
+
+    POP SI
+    POP DX
+    POP CX
+    POP AX
+
+    RET
+
+PRINT_BUFFER ENDP
+
+
+; ==============================
+; SHOW INVALID
+; ==============================
+
+SHOW_INVALID PROC
+
+    MOV AH,09H
+    LEA DX,invalidMsg
+    INT 21H
+
+    RET
+
+SHOW_INVALID ENDP
+
+
+; ==============================
+; SHOW NOT FOUND
+; ==============================
+
+SHOW_NOT_FOUND PROC
+
+    MOV AH,09H
+    LEA DX,venueNotFoundMsg
+    INT 21H
+
+    RET
+
+SHOW_NOT_FOUND ENDP
+
+; ==============================
+; CHECK VENUE + CURRENT DATE + TIME SLOT
+; AL = 1 -> available
+; AL = 0 -> already booked
+; ==============================
+
+CHECK_TIME_AVAILABILITY PROC
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+    PUSH DI
+
+    ; Get current system date
+    MOV AH,2AH
+    INT 21H
+
+    MOV CURRENT_BOOKING_DAY,DL
+    MOV CURRENT_BOOKING_MONTH,DH
+    MOV CURRENT_BOOKING_YEAR,CX
+
+    ; BX = booking index (byte-array index)
+    XOR BX,BX
+
+CHECK_SLOT_LOOP:
+    ; Stop when BX >= bookingCount
+    CMP BL,bookingCount
+    JAE SLOT_AVAILABLE
+
+    ; Check venue number
+    MOV AL,BOOKING_VENUE_SLOT_LIST[BX]
+    CMP AL,CURRENT_VENUE_SLOT
+    JNE NEXT_SLOT
+
+    ; Check time slot
+    MOV AL,BOOKING_TIME_LIST[BX]
+    CMP AL,BOOKING_TIME_CURRENT
+    JNE NEXT_SLOT
+
+    ; Check day
+    MOV AL,BOOKING_DAY_LIST[BX]
+    CMP AL,CURRENT_BOOKING_DAY
+    JNE NEXT_SLOT
+
+    ; Check month
+    MOV AL,BOOKING_MONTH_LIST[BX]
+    CMP AL,CURRENT_BOOKING_MONTH
+    JNE NEXT_SLOT
+
+    ; Check year
+    PUSH BX
+    SHL BX,1
+    MOV AX,BOOKING_YEAR_LIST[BX]
+    CMP AX,CURRENT_BOOKING_YEAR
+    POP BX
+    JNE NEXT_SLOT
+
+    ; Same venue + date + time found
+    MOV AL,0
+    JMP CHECK_SLOT_DONE
+
+NEXT_SLOT:
+    INC BX
+    JMP CHECK_SLOT_LOOP
+
+SLOT_AVAILABLE:
+    MOV AL,1
+
+CHECK_SLOT_DONE:
+    POP DI
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    RET
+
+CHECK_TIME_AVAILABILITY ENDP
+
+
+; ==============================
+; SAVE COMPLETED BOOKING (MAX 10)
+; ==============================
+
+SAVE_BOOKING_RECORD PROC
+
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+    PUSH DI
+    PUSH ES
+
+    CMP bookingCount,10
+    JB SAVE_BOOKING_START
+
+    MOV AL,0
+    JMP SAVE_BOOKING_DONE
+
+SAVE_BOOKING_START:
+
+    ; Buffer offset = bookingCount * 32
+    XOR BX,BX
+    MOV BL,bookingCount
+    SHL BX,1
+    SHL BX,1
+    SHL BX,1
+    SHL BX,1
+    SHL BX,1
+
+    ; ES must point to the data segment for MOVSB
+    MOV AX,DS
+    MOV ES,AX
+    CLD
+
+    ; Copy customer name buffer
+    LEA SI,CUSTOMER_NAME
+    LEA DI,BOOKING_CUSTOMER_LIST
+    ADD DI,BX
+    MOV CX,32
+    REP MOVSB
+
+    ; Copy customer phone buffer (15 digits max)
+    LEA SI,CUSTOMER_PHONE
+    LEA DI,BOOKING_PHONE_LIST
+    ADD DI,BX
+    MOV CX,17
+    REP MOVSB
+
+    ; Copy selected venue name buffer
+    MOV SI,CURRENT_NAME
+    LEA DI,BOOKING_VENUE_LIST
+    ADD DI,BX
+    MOV CX,32
+    REP MOVSB
+
+    ; Word offset = bookingCount * 2
+    XOR BX,BX
+    MOV BL,bookingCount
+    SHL BX,1
+
+    MOV AX,VENUE_PRICE_VALUE
+    MOV BOOKING_PRICE_LIST[BX],AX
+
+    MOV AX,BOOKING_QUANTITY
+    MOV BOOKING_QUANTITY_LIST[BX],AX
+
+    MOV AX,SUBTOTAL_VALUE
+    MOV BOOKING_SUBTOTAL_LIST[BX],AX
+
+    MOV AX,SERVICE_CHARGE_VALUE
+    MOV BOOKING_SERVICE_LIST[BX],AX
+
+    MOV AX,TOTAL_VALUE
+    MOV BOOKING_TOTAL_LIST[BX],AX
+
+    MOV AX,PAYMENT_VALUE
+    MOV BOOKING_PAID_LIST[BX],AX
+
+    MOV AX,CHANGE_VALUE
+    MOV BOOKING_CHANGE_LIST[BX],AX
+
+    ; Get current system date and save it with this booking
+    MOV AH,2AH
+    INT 21H
+
+    ; DI = booking index for byte arrays
+    MOV DI,BX
+    SHR DI,1
+
+    MOV BOOKING_DAY_LIST[DI],DL
+    MOV BOOKING_MONTH_LIST[DI],DH
+    MOV BOOKING_YEAR_LIST[BX],CX
+
+    ; Save selected time slot and venue number
+    MOV AL,BOOKING_TIME_CURRENT
+    MOV BOOKING_TIME_LIST[DI],AL
+
+    MOV AL,CURRENT_VENUE_SLOT
+    MOV BOOKING_VENUE_SLOT_LIST[DI],AL
+
+    INC bookingCount
+    MOV AL,1
+
+SAVE_BOOKING_DONE:
+
+    POP ES
+    POP DI
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+
+    RET
+
+SAVE_BOOKING_RECORD ENDP
+
+
+; ==============================
+; PRINT E-RECEIPT
+; ==============================
+
+PRINT_RECEIPT PROC
+
+    ; Clear screen before receipt
+    MOV AH,00H
+    MOV AL,03H
+    INT 10H
+
+    ; ==============================
+    ; RECEIPT HEADER
+    ; ==============================
+
+    MOV AH,09H
+    LEA DX,receiptTitle
+    INT 21H
+
+    ; Booking number
+    MOV AH,09H
+    LEA DX,receiptBookingNoMsg
+    INT 21H
+    XOR AX,AX
+    MOV AL,bookingCount
+    CALL PRINT_NUMBER
+
+    ; Booking date (current system date)
+    MOV AH,09H
+    LEA DX,receiptDateMsg
+    INT 21H
+    CALL PRINT_CURRENT_DATE
+
+    ; Booking time slot
+    MOV AH,09H
+    LEA DX,receiptTimeMsg
+    INT 21H
+    MOV AL,BOOKING_TIME_CURRENT
+    CALL PRINT_TIME_SLOT
+
+    ; Customer name
+    MOV AH,09H
+    LEA DX,receiptCustomerMsg
+    INT 21H
+    LEA SI,CUSTOMER_NAME
+    CALL PRINT_BUFFER
+
+    ; Phone number
+    MOV AH,09H
+    LEA DX,receiptPhoneMsg
+    INT 21H
+    LEA SI,CUSTOMER_PHONE
+    CALL PRINT_BUFFER
+
+    ; Venue
+    MOV AH,09H
+    LEA DX,receiptVenueMsg
+    INT 21H
+    MOV SI,CURRENT_NAME
+    CALL PRINT_BUFFER
+
+    MOV AH,09H
+    LEA DX,receiptSeparatorMsg
+    INT 21H
+
+    ; Unit price
+    MOV AH,09H
+    LEA DX,receiptUnitPriceMsg
+    INT 21H
+    MOV AX,VENUE_PRICE_VALUE
+    CALL PRINT_NUMBER
+
+    ; Quantity
+    MOV AH,09H
+    LEA DX,receiptQuantityMsg
+    INT 21H
+    MOV AX,BOOKING_QUANTITY
+    CALL PRINT_NUMBER
+
+    ; Subtotal
+    MOV AH,09H
+    LEA DX,receiptSubtotalMsg
+    INT 21H
+    MOV AX,SUBTOTAL_VALUE
+    CALL PRINT_NUMBER
+
+    ; Service charge
+    MOV AH,09H
+    LEA DX,receiptServiceMsg
+    INT 21H
+    MOV AX,SERVICE_CHARGE_VALUE
+    CALL PRINT_NUMBER
+
+    ; Total
+    MOV AH,09H
+    LEA DX,receiptTotalMsg
+    INT 21H
+    MOV AX,TOTAL_VALUE
+    CALL PRINT_NUMBER
+
+    ; Amount paid
+    MOV AH,09H
+    LEA DX,receiptPaidMsg
+    INT 21H
+    MOV AX,PAYMENT_VALUE
+    CALL PRINT_NUMBER
+
+    ; Change
+    MOV AH,09H
+    LEA DX,receiptChangeMsg
+    INT 21H
+    MOV AX,CHANGE_VALUE
+    CALL PRINT_NUMBER
+
+    MOV AH,09H
+    LEA DX,receiptThanksMsg
+    INT 21H
+
+    RET
+
+PRINT_RECEIPT ENDP
+
+
+;
+; ==============================
+; PRINT CURRENT SYSTEM DATE
+; Format: DD/MM/YYYY
+; ==============================
+
+PRINT_CURRENT_DATE PROC
+
+    MOV AH,2AH
+    INT 21H
+
+    ; Day
+    XOR AX,AX
+    MOV AL,DL
+    CALL PRINT_2DIGIT
+
+    MOV DL,'/'
+    MOV AH,02H
+    INT 21H
+
+    ; Month
+    XOR AX,AX
+    MOV AL,DH
+    CALL PRINT_2DIGIT
+
+    MOV DL,'/'
+    MOV AH,02H
+    INT 21H
+
+    ; Year
+    MOV AX,CX
+    CALL PRINT_NUMBER
+
+    RET
+
+PRINT_CURRENT_DATE ENDP
+
+
+; ==============================
+; PRINT SAVED DATE
+; Uses viewBookingIndex
+; Format: DD/MM/YYYY
+; ==============================
+
+PRINT_SAVED_DATE PROC
+
+    PUSH AX
+    PUSH BX
+    PUSH DX
+
+    XOR BX,BX
+    MOV BL,viewBookingIndex
+
+    XOR AX,AX
+    MOV AL,BOOKING_DAY_LIST[BX]
+    CALL PRINT_2DIGIT
+
+    MOV DL,'/'
+    MOV AH,02H
+    INT 21H
+
+    XOR AX,AX
+    MOV AL,BOOKING_MONTH_LIST[BX]
+    CALL PRINT_2DIGIT
+
+    MOV DL,'/'
+    MOV AH,02H
+    INT 21H
+
+    SHL BX,1
+    MOV AX,BOOKING_YEAR_LIST[BX]
+    CALL PRINT_NUMBER
+
+    POP DX
+    POP BX
+    POP AX
+    RET
+
+PRINT_SAVED_DATE ENDP
+
+
+; ==============================
+; PRINT 2-DIGIT NUMBER
+; AX = 0..99
+; ==============================
+
+PRINT_2DIGIT PROC
+
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+
+    XOR AH,AH
+    MOV BL,10
+    DIV BL
+
+    ; Save remainder (ones digit)
+    MOV CL,AH
+
+    ; Print quotient (tens digit)
+    MOV DL,AL
+    ADD DL,'0'
+    MOV AH,02H
+    INT 21H
+
+    ; Print remainder (ones digit)
+    MOV DL,CL
+    ADD DL,'0'
+    MOV AH,02H
+    INT 21H
+
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+
+PRINT_2DIGIT ENDP
+
+
+; ==============================
+; PRINT TIME SLOT
+; AL = 1..4
+; ==============================
+
+PRINT_TIME_SLOT PROC
+
+    CMP AL,1
+    JE PRINT_TIME_1
+    CMP AL,2
+    JE PRINT_TIME_2
+    CMP AL,3
+    JE PRINT_TIME_3
+    CMP AL,4
+    JE PRINT_TIME_4
+    RET
+
+PRINT_TIME_1:
+    MOV AH,09H
+    LEA DX,receiptTime1Msg
+    INT 21H
+    RET
+
+PRINT_TIME_2:
+    MOV AH,09H
+    LEA DX,receiptTime2Msg
+    INT 21H
+    RET
+
+PRINT_TIME_3:
+    MOV AH,09H
+    LEA DX,receiptTime3Msg
+    INT 21H
+    RET
+
+PRINT_TIME_4:
+    MOV AH,09H
+    LEA DX,receiptTime4Msg
+    INT 21H
+    RET
+
+PRINT_TIME_SLOT ENDP
+
+
+; ==============================
+; CONFIRMATION FUNCTIONS
+; ==============================
+
+CONFIRM_ADD PROC
+
+CONFIRM_ADD_AGAIN:
+    MOV AH,09H
+    LEA DX,confirmAddMsg
+    INT 21H
+
+    MOV AH,01H
+    INT 21H
+
+    CMP AL,'Y'
+    JE CONFIRM_ADD_DONE
+    CMP AL,'y'
+    JE CONFIRM_ADD_DONE
+    CMP AL,'N'
+    JE CONFIRM_ADD_DONE
+    CMP AL,'n'
+    JE CONFIRM_ADD_DONE
+
+    MOV AH,09H
+    LEA DX,confirmYesNoMsg
+    INT 21H
+    JMP CONFIRM_ADD_AGAIN
+
+CONFIRM_ADD_DONE:
+    RET
+
+CONFIRM_ADD ENDP
+
+
+CONFIRM_EDIT PROC
+
+CONFIRM_EDIT_AGAIN:
+    MOV AH,09H
+    LEA DX,confirmEditMsg
+    INT 21H
+
+    MOV AH,01H
+    INT 21H
+
+    CMP AL,'Y'
+    JE CONFIRM_EDIT_DONE
+    CMP AL,'y'
+    JE CONFIRM_EDIT_DONE
+    CMP AL,'N'
+    JE CONFIRM_EDIT_DONE
+    CMP AL,'n'
+    JE CONFIRM_EDIT_DONE
+
+    MOV AH,09H
+    LEA DX,confirmYesNoMsg
+    INT 21H
+    JMP CONFIRM_EDIT_AGAIN
+
+CONFIRM_EDIT_DONE:
+    RET
+
+CONFIRM_EDIT ENDP
+
+
+CONFIRM_DELETE PROC
+
+CONFIRM_DELETE_AGAIN:
+    MOV AH,09H
+    LEA DX,confirmDeleteMsg
+    INT 21H
+
+    MOV AH,01H
+    INT 21H
+
+    CMP AL,'Y'
+    JE CONFIRM_DELETE_DONE
+    CMP AL,'y'
+    JE CONFIRM_DELETE_DONE
+    CMP AL,'N'
+    JE CONFIRM_DELETE_DONE
+    CMP AL,'n'
+    JE CONFIRM_DELETE_DONE
+
+    MOV AH,09H
+    LEA DX,confirmYesNoMsg
+    INT 21H
+    JMP CONFIRM_DELETE_AGAIN
+
+CONFIRM_DELETE_DONE:
+    RET
+
+CONFIRM_DELETE ENDP
+
+
+CONFIRM_LOGOUT PROC
+
+CONFIRM_LOGOUT_AGAIN:
+    MOV AH,09H
+    LEA DX,confirmLogoutMsg
+    INT 21H
+
+    MOV AH,01H
+    INT 21H
+
+    CMP AL,'Y'
+    JE CONFIRM_LOGOUT_DONE
+    CMP AL,'y'
+    JE CONFIRM_LOGOUT_DONE
+    CMP AL,'N'
+    JE CONFIRM_LOGOUT_DONE
+    CMP AL,'n'
+    JE CONFIRM_LOGOUT_DONE
+
+    MOV AH,09H
+    LEA DX,confirmYesNoMsg
+    INT 21H
+    JMP CONFIRM_LOGOUT_AGAIN
+
+CONFIRM_LOGOUT_DONE:
+    RET
+
+CONFIRM_LOGOUT ENDP
+
+
+CONFIRM_EXIT PROC
+
+CONFIRM_EXIT_AGAIN:
+    MOV AH,09H
+    LEA DX,confirmExitMsg
+    INT 21H
+
+    MOV AH,01H
+    INT 21H
+
+    CMP AL,'Y'
+    JE CONFIRM_EXIT_DONE
+    CMP AL,'y'
+    JE CONFIRM_EXIT_DONE
+    CMP AL,'N'
+    JE CONFIRM_EXIT_DONE
+    CMP AL,'n'
+    JE CONFIRM_EXIT_DONE
+
+    MOV AH,09H
+    LEA DX,confirmYesNoMsg
+    INT 21H
+    JMP CONFIRM_EXIT_AGAIN
+
+CONFIRM_EXIT_DONE:
+    RET
+
+CONFIRM_EXIT ENDP

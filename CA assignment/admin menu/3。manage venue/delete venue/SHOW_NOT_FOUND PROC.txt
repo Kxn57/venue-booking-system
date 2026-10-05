@@ -1,0 +1,9 @@
+SHOW_NOT_FOUND PROC
+
+    MOV AH,09H
+    LEA DX,venueNotFoundMsg
+    INT 21H
+
+    RET
+
+SHOW_NOT_FOUND ENDP

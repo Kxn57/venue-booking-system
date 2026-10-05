@@ -1,0 +1,276 @@
+; VIEW ALL BOOKINGS
+; ==============================
+
+VIEW_ALL_BOOKINGS:
+
+    ; Clear screen before displaying this function/page
+    MOV AH,00H
+    MOV AL,03H
+    INT 10H
+
+    CMP bookingCount,0
+    JNE SHOW_BOOKING_LIST
+
+    MOV AH,09H
+    LEA DX,noBookingMsg
+    INT 21H
+    JMP ADMIN_MENU
+
+
+SHOW_BOOKING_LIST:
+
+    ; Clear screen so all booking records are easy to read
+    MOV AH,00H
+    MOV AL,03H
+    INT 10H
+
+    MOV AH,09H
+    LEA DX,bookingListTitle
+    INT 21H
+
+    MOV viewBookingIndex,0		现在从第 0 个 Booking 开始看
+
+
+VIEW_BOOKING_LOOP:
+
+    ; Check whether all bookings have been displayed
+    MOV AL,viewBookingIndex
+    CMP AL,bookingCount
+    JB VIEW_BOOKING_CONTINUE		if bookingindex less than bookingcount then continue view booking
+    JMP VIEW_BOOKING_DONE		
+
+
+VIEW_BOOKING_CONTINUE:
+
+    ; Show one booking per screen so earlier records are not pushed off-screen
+    MOV AH,00H
+    MOV AL,03H
+    INT 10H
+
+    MOV AH,09H
+    LEA DX,bookingListTitle
+    INT 21H
+
+    ; ==============================
+    ; BOOKING NUMBER
+    ; ==============================
+
+    MOV AH,09H
+    LEA DX,bookingNoMsg
+    INT 21H
+
+    XOR AX,AX		把 AX 清零
+    MOV AL,viewBookingIndex
+    INC AL
+    CALL PRINT_NUMBER
+
+
+    ; ==============================
+    ; CUSTOMER NAME
+    ; ==============================
+
+    MOV AH,09H
+    LEA DX,bookingCustomerMsg
+    INT 21H
+
+    ; Offset = index * 32
+    XOR AX,AX
+    MOV AL,viewBookingIndex
+    SHL AX,1			一次 SHL → ×2
+    SHL AX,1			两次 SHL → ×4
+    SHL AX,1			三次 SHL → ×8
+    SHL AX,1			四次 SHL → ×16
+    SHL AX,1			五次 SHL → ×32   因为每个customer占32byte
+    MOV SI,AX
+
+    LEA DI,BOOKING_CUSTOMER_LIST
+    ADD DI,SI
+    MOV SI,DI
+    CALL PRINT_BUFFER
+
+    ; ==============================
+    ; PHONE NUMBER
+    ; ==============================
+
+    MOV AH,09H
+    LEA DX,bookingPhoneMsg
+    INT 21H
+
+    XOR AX,AX
+    MOV AL,viewBookingIndex
+    MOV BX,17			17byte是phone number
+    MUL BX
+    MOV SI,AX
+
+    LEA DI,BOOKING_PHONE_LIST
+    ADD DI,SI
+    MOV SI,DI
+    CALL PRINT_BUFFER
+
+
+    ; ==============================
+    ; VENUE NAME
+    ; ==============================
+
+    MOV AH,09H
+    LEA DX,bookingVenueMsg
+    INT 21H
+
+    XOR AX,AX
+    MOV AL,viewBookingIndex
+    SHL AX,1
+    SHL AX,1
+    SHL AX,1
+    SHL AX,1
+    SHL AX,1
+    MOV SI,AX
+
+    LEA DI,BOOKING_VENUE_LIST
+    ADD DI,SI
+    MOV SI,DI
+    CALL PRINT_BUFFER
+
+    ; DATE
+    MOV AH,09H
+    LEA DX,bookingDateMsg
+    INT 21H
+    CALL PRINT_SAVED_DATE
+
+    ; TIME
+    MOV AH,09H
+    LEA DX,bookingTimeMsg
+    INT 21H
+    XOR BX,BX
+    MOV BL,viewBookingIndex
+    MOV AL,BOOKING_TIME_LIST[BX]
+    CALL PRINT_TIME_SLOT
+
+    ; ==============================
+    ; UNIT PRICE
+    ; ==============================
+
+    MOV AH,09H
+    LEA DX,bookingPriceMsg
+    INT 21H
+
+    XOR BX,BX
+    MOV BL,viewBookingIndex
+    SHL BX,1
+    MOV AX,BOOKING_PRICE_LIST[BX]
+    CALL PRINT_NUMBER
+
+    ; ==============================
+    ; QUANTITY
+    ; ==============================
+
+    MOV AH,09H
+    LEA DX,bookingQuantityReportMsg
+    INT 21H
+
+    XOR BX,BX
+    MOV BL,viewBookingIndex
+    SHL BX,1
+    MOV AX,BOOKING_QUANTITY_LIST[BX]
+    CALL PRINT_NUMBER
+
+    ; ==============================
+    ; SUBTOTAL
+    ; ==============================
+
+    MOV AH,09H
+    LEA DX,bookingSubtotalReportMsg
+    INT 21H
+
+    XOR BX,BX
+    MOV BL,viewBookingIndex
+    SHL BX,1
+    MOV AX,BOOKING_SUBTOTAL_LIST[BX]
+    CALL PRINT_NUMBER
+
+    ; ==============================
+    ; SERVICE CHARGE
+    ; ==============================
+
+    MOV AH,09H
+    LEA DX,bookingServiceReportMsg
+    INT 21H
+
+    XOR BX,BX
+    MOV BL,viewBookingIndex
+    SHL BX,1
+    MOV AX,BOOKING_SERVICE_LIST[BX]
+    CALL PRINT_NUMBER
+
+    ; ==============================
+    ; TOTAL
+    ; ==============================
+
+    MOV AH,09H
+    LEA DX,bookingTotalReportMsg
+    INT 21H
+
+    XOR BX,BX
+    MOV BL,viewBookingIndex
+    SHL BX,1
+    MOV AX,BOOKING_TOTAL_LIST[BX]
+    CALL PRINT_NUMBER
+
+    ; ==============================
+    ; AMOUNT PAID
+    ; ==============================
+
+    MOV AH,09H
+    LEA DX,bookingPaidMsg
+    INT 21H
+
+    XOR BX,BX
+    MOV BL,viewBookingIndex
+    SHL BX,1
+    MOV AX,BOOKING_PAID_LIST[BX]
+    CALL PRINT_NUMBER
+
+    ; ==============================
+    ; CHANGE
+    ; ==============================
+
+    MOV AH,09H
+    LEA DX,bookingChangeMsg
+    INT 21H
+
+    XOR BX,BX
+    MOV BL,viewBookingIndex
+    SHL BX,1
+    MOV AX,BOOKING_CHANGE_LIST[BX]
+    CALL PRINT_NUMBER
+
+
+    ; ==============================
+    ; NEXT BOOKING / END
+    ; ==============================
+
+    INC viewBookingIndex
+
+    MOV AL,viewBookingIndex
+    CMP AL,bookingCount
+    JAE VIEW_BOOKING_DONE
+
+    MOV AH,09H
+    LEA DX,viewBookingNextMsg
+    INT 21H
+
+    MOV AH,01H
+    INT 21H
+
+    JMP VIEW_BOOKING_LOOP
+
+
+VIEW_BOOKING_DONE:
+
+    MOV AH,09H
+    LEA DX,viewBookingContinueMsg
+    INT 21H
+
+    MOV AH,01H
+    INT 21H
+
+    JMP ADMIN_MENU

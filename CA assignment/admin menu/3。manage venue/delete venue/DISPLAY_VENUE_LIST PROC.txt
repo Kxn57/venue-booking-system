@@ -1,0 +1,95 @@
+DISPLAY_VENUE_LIST PROC
+
+    ; VENUE 1
+    CMP VENUE1_EXIST,1
+    JNE LIST_VENUE2
+
+    MOV AH,09H
+    LEA DX,NEWLINE
+    INT 21H
+
+    MOV DL,'1'
+    MOV AH,02H
+    INT 21H
+
+    MOV DL,'.'
+    MOV AH,02H
+    INT 21H
+
+    MOV DL,' '
+    MOV AH,02H
+    INT 21H
+
+    LEA SI,VENUE1_NAME
+    CALL PRINT_BUFFER
+
+    MOV AH,09H
+    LEA DX,NEWLINE
+    INT 21H
+
+
+LIST_VENUE2:
+
+    ; VENUE 2
+    CMP VENUE2_EXIST,1
+    JNE LIST_VENUE3
+
+    MOV AH,09H
+    LEA DX,NEWLINE
+    INT 21H
+
+    MOV DL,'2'
+    MOV AH,02H
+    INT 21H
+
+    MOV DL,'.'
+    MOV AH,02H
+    INT 21H
+
+    MOV DL,' '
+    MOV AH,02H
+    INT 21H
+
+    LEA SI,VENUE2_NAME
+    CALL PRINT_BUFFER
+
+    MOV AH,09H
+    LEA DX,NEWLINE
+    INT 21H
+
+
+LIST_VENUE3:
+
+    ; VENUE 3
+    CMP VENUE3_EXIST,1
+    JNE LIST_DONE
+
+    MOV AH,09H
+    LEA DX,NEWLINE
+    INT 21H
+
+    MOV DL,'3'
+    MOV AH,02H
+    INT 21H
+
+    MOV DL,'.'
+    MOV AH,02H
+    INT 21H
+
+    MOV DL,' '
+    MOV AH,02H
+    INT 21H
+
+    LEA SI,VENUE3_NAME
+    CALL PRINT_BUFFER
+
+    MOV AH,09H
+    LEA DX,NEWLINE
+    INT 21H
+
+
+LIST_DONE:
+
+    RET
+
+DISPLAY_VENUE_LIST ENDP

@@ -1,0 +1,337 @@
+; CUSTOMER BOOKING AND PAYMENT
+; ==============================
+
+CUSTOMER_BOOKING:
+
+    ; Clear screen before displaying this function/page
+    MOV AH,00H
+    MOV AL,03H
+    INT 10H
+
+    MOV AH,09H
+    LEA DX,customerBookingTitle
+    INT 21H
+
+    ; Show venue name, price and capacity
+    CALL DISPLAY_BOOKING_VENUE_LIST
+
+    MOV AH,09H
+    LEA DX,selectVenueMsg    
+    INT 21H
+
+    MOV AH,01H      从键盘读取一个字符
+    INT 21H
+
+    CMP AL,'1'				看input是不是1
+    JNE CUSTOMER_BOOKING_CHECK_2	如果不是就跳去check 2
+    CMP VENUE1_EXIST,1			一个状态变量，如果venue1存在就可以选择，如果是0就不存在
+    JE CUSTOMER_BOOKING_VENUE1_OK	有的话就跳venue1 ok
+    JMP CUSTOMER_BOOKING_ERROR		没有的话就booking error
+
+CUSTOMER_BOOKING_VENUE1_OK:		
+    CALL SET_VENUE1			
+    MOV CURRENT_VENUE_SLOT,1		记录用户选择1，过后check time availability会用到
+    JMP CUSTOMER_GET_TIME		直接跳去选择time slot
+
+CUSTOMER_BOOKING_CHECK_2:		venue2 的一样
+    CMP AL,'2'
+    JNE CUSTOMER_BOOKING_CHECK_3
+    CMP VENUE2_EXIST,1
+    JE CUSTOMER_BOOKING_VENUE2_OK
+    JMP CUSTOMER_BOOKING_ERROR
+
+CUSTOMER_BOOKING_VENUE2_OK:
+    CALL SET_VENUE2
+    MOV CURRENT_VENUE_SLOT,2
+    JMP CUSTOMER_GET_TIME		跳去time slot
+
+CUSTOMER_BOOKING_CHECK_3:
+    CMP AL,'3'
+    JE CUSTOMER_BOOKING_CHECK_VENUE3
+    JMP CUSTOMER_BOOKING_ERROR
+
+CUSTOMER_BOOKING_CHECK_VENUE3:
+    CMP VENUE3_EXIST,1
+    JE CUSTOMER_BOOKING_VENUE3_OK
+    JMP CUSTOMER_BOOKING_ERROR
+
+CUSTOMER_BOOKING_VENUE3_OK:
+    CALL SET_VENUE3
+    MOV CURRENT_VENUE_SLOT,3
+    JMP CUSTOMER_GET_TIME
+
+CUSTOMER_CAPACITY_FULL:
+    MOV AH,09H
+    LEA DX,capacityFullMsg
+    INT 21H
+    JMP CUSTOMER_BOOKING
+
+
+CUSTOMER_GET_TIME:
+    MOV AH,09H
+    LEA DX,timeSlot1Msg
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,timeSlot2Msg
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,timeSlot3Msg
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,timeSlot4Msg
+    INT 21H
+
+TIME_AGAIN:
+    MOV AH,09H
+    LEA DX,bookingTimeMsgInput  	output这个SELECT TIME SLOT (1-4):
+    INT 21H
+
+    MOV AH,01H      （input）
+    INT 21H
+
+    CMP AL,'1'
+    JE TIME_1_SELECTED         检查如果1就time1selected，如果2就time2selected
+    CMP AL,'2'
+    JE TIME_2_SELECTED
+    CMP AL,'3'
+    JE TIME_3_SELECTED
+    CMP AL,'4'
+    JE TIME_4_SELECTED
+
+    MOV AH,09H
+    LEA DX,invalidTimeMsg   如果不是1-4就invalid msg然后回去time again
+    INT 21H
+    JMP TIME_AGAIN
+
+TIME_1_SELECTED:
+    MOV BOOKING_TIME_CURRENT,1
+    CALL CHECK_TIME_AVAILABILITY
+    CMP AL,1
+    JE CUSTOMER_GET_QUANTITY
+    MOV AH,09H
+    LEA DX,timeBookedMsg	如果不是available就display already book msg
+    INT 21H
+    JMP CUSTOMER_GET_TIME   	重新选择时间
+
+TIME_2_SELECTED:
+    MOV BOOKING_TIME_CURRENT,2
+    CALL CHECK_TIME_AVAILABILITY
+    CMP AL,1
+    JE CUSTOMER_GET_QUANTITY
+    MOV AH,09H
+    LEA DX,timeBookedMsg
+    INT 21H
+    JMP CUSTOMER_GET_TIME
+
+TIME_3_SELECTED:
+    MOV BOOKING_TIME_CURRENT,3
+    CALL CHECK_TIME_AVAILABILITY
+    CMP AL,1
+    JE CUSTOMER_GET_QUANTITY
+    MOV AH,09H
+    LEA DX,timeBookedMsg
+    INT 21H
+    JMP CUSTOMER_GET_TIME
+
+TIME_4_SELECTED:
+    MOV BOOKING_TIME_CURRENT,4
+    CALL CHECK_TIME_AVAILABILITY
+    CMP AL,1
+    JE CUSTOMER_GET_QUANTITY
+    MOV AH,09H
+    LEA DX,timeBookedMsg
+    INT 21H
+    JMP CUSTOMER_GET_TIME
+
+CUSTOMER_GET_QUANTITY:
+    ; Ask how many capacity units this customer wants to book
+QUANTITY_AGAIN:
+    LEA SI,BOOKING_QUANTITY_INPUT	告诉 READ_NUMBER，输入的数据要放哪里
+    LEA DX,bookingQuantityMsg		告诉 READ_NUMBER 要显示什么提示。
+    CALL READ_NUMBER
+
+    LEA SI,BOOKING_QUANTITY_INPUT
+    CALL BUFFER_TO_NUMBER
+    CMP AX,0				检查是不是 0
+    JNE CHECK_REQUESTED_CAPACITY
+
+    MOV AH,09H				
+    LEA DX,positiveNumberMsg		output（Please enter a positive number.）
+    INT 21H
+    JMP QUANTITY_AGAIN			重新打过quantity
+
+CHECK_REQUESTED_CAPACITY:
+    MOV BOOKING_QUANTITY,AX 		保存quantity
+
+    ; Compare requested quantity with current available capacity
+    MOV SI,CURRENT_CAPACITY
+    CALL BUFFER_TO_NUMBER
+    CMP AX,BOOKING_QUANTITY		capacity要大过quantity才能继续
+    JAE CUSTOMER_GET_NAME 		Jump if Above or Equal
+
+    MOV AH,09H
+    LEA DX,quantityTooHighMsg		如果capacity小过quantity就会执行这个
+    INT 21H				重新选过
+    JMP QUANTITY_AGAIN
+
+CUSTOMER_GET_NAME:
+    LEA SI,CUSTOMER_NAME
+    LEA DX,customerNameMsg		输入customer名字
+    CALL READ_TEXT
+
+CUSTOMER_GET_PHONE:
+    LEA SI,CUSTOMER_PHONE
+    LEA DX,customerPhoneMsg		输入customer电话号码
+    CALL READ_NUMBER
+
+    ; Go to payment after booking details are entered
+    JMP CUSTOMER_PAYMENT		去payment
+
+CUSTOMER_PAYMENT:
+
+    ; Clear screen before displaying this function/page
+    MOV AH,00H
+    MOV AL,03H
+    INT 10H
+
+    MOV AH,09H
+    LEA DX,paymentTitle
+    INT 21H
+
+    ; Convert unit venue price from text to number
+    MOV SI,CURRENT_PRICE
+    CALL BUFFER_TO_NUMBER			转换venue price
+    MOV VENUE_PRICE_VALUE,AX
+
+    ; Show unit price
+    MOV AH,09H
+    LEA DX,paymentUnitPriceMsg			显示unit price
+    INT 21H
+    MOV AX,VENUE_PRICE_VALUE
+    CALL PRINT_NUMBER				print出来价钱
+
+    ; Show quantity
+    MOV AH,09H
+    LEA DX,paymentQuantityMsg			显示quantity
+    INT 21H
+    MOV AX,BOOKING_QUANTITY
+    CALL PRINT_NUMBER
+
+    ; SUBTOTAL = unit price * quantity
+    MOV AX,VENUE_PRICE_VALUE
+    MOV BX,BOOKING_QUANTITY			
+    MUL BX
+    MOV SUBTOTAL_VALUE,AX
+
+    MOV AH,09H
+    LEA DX,paymentSubtotalMsg  			print sub total msg
+    INT 21H
+    MOV AX,SUBTOTAL_VALUE
+    CALL PRINT_NUMBER				print 总价格，multiply过后
+
+    ; SERVICE CHARGE = subtotal * 6 / 100
+    MOV AX,SUBTOTAL_VALUE
+    MOV BX,6
+    MUL BX
+    MOV BX,100					service charge
+    DIV BX
+    MOV SERVICE_CHARGE_VALUE,AX
+
+    MOV AH,09H
+    LEA DX,paymentServiceMsg
+    INT 21H
+    MOV AX,SERVICE_CHARGE_VALUE			print
+    CALL PRINT_NUMBER
+
+    ; TOTAL = subtotal + service charge
+    MOV AX,SUBTOTAL_VALUE
+    ADD AX,SERVICE_CHARGE_VALUE			total
+    MOV TOTAL_VALUE,AX
+
+    MOV AH,09H
+    LEA DX,paymentTotalMsg			print
+    INT 21H
+    MOV AX,TOTAL_VALUE
+    CALL PRINT_NUMBER
+
+PAYMENT_AGAIN:					现在开始收钱
+
+    ; Only ask for payment after showing the final total
+    LEA SI,PAYMENT_INPUT
+    LEA DX,paymentAmountMsg
+    CALL READ_NUMBER
+
+    ; Convert customer payment from text to number
+    LEA SI,PAYMENT_INPUT
+    CALL BUFFER_TO_NUMBER
+    MOV PAYMENT_VALUE,AX
+
+    ; Check if payment is enough
+    CMP AX,TOTAL_VALUE			检查钱够不够
+    JB NOT_ENOUGH_PAYMENT		如果不够就去not enough payment
+
+    ; Change = Payment - Total
+    SUB AX,TOTAL_VALUE
+    MOV CHANGE_VALUE,AX			change，剩钱
+
+    MOV AH,09H
+    LEA DX,paymentSuccessMsg			成功给钱msg
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,changeMsg
+    INT 21H
+
+    MOV AX,CHANGE_VALUE
+    CALL PRINT_NUMBER
+
+    ; Save completed booking so Admin can view it later
+    CALL SAVE_BOOKING_RECORD			保存booking
+    CMP AL,1					如果保存成功，就不会跳去booking storage full
+    JNE BOOKING_STORAGE_FULL
+
+    ; Reduce selected venue capacity by the booked quantity after successful booking
+    CALL DECREASE_CURRENT_CAPACITY		减少venue capacity
+
+    MOV AH,09H
+    LEA DX,bookingSuccessMsg			booking successful的信息
+    INT 21H
+
+    CALL PRINT_RECEIPT				print receipt
+
+    MOV AH,09H
+    LEA DX,NEWLINE
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,receiptContinueMsg			等用户按随便一个键
+    INT 21H
+
+    MOV AH,01H
+    INT 21H
+
+    JMP CUSTOMER_MENU_LOOP			按完过后回去customer menu
+
+BOOKING_STORAGE_FULL:
+    MOV AH,09H
+    LEA DX,bookingFullMsg
+    INT 21H
+    JMP CUSTOMER_MENU_LOOP
+
+
+NOT_ENOUGH_PAYMENT:
+
+    MOV AH,09H
+    LEA DX,notEnoughMsg
+    INT 21H
+
+    JMP PAYMENT_AGAIN
+
+CUSTOMER_BOOKING_ERROR:
+    MOV AH,09H
+    LEA DX,bookingInvalidMsg
+    INT 21H
+    JMP CUSTOMER_BOOKING

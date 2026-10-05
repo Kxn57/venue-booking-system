@@ -1,0 +1,71 @@
+CHECK_TIME_AVAILABILITY PROC   line 3079
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+    PUSH DI
+
+    ; Get current system date
+    MOV AH,2AH
+    INT 21H
+
+    MOV CURRENT_BOOKING_DAY,DL
+    MOV CURRENT_BOOKING_MONTH,DH
+    MOV CURRENT_BOOKING_YEAR,CX
+
+    ; BX = booking index (byte-array index)
+    XOR BX,BX
+
+CHECK_SLOT_LOOP:
+    ; Stop when BX >= bookingCount
+    CMP BL,bookingCount
+    JAE SLOT_AVAILABLE
+
+    ; Check venue number
+    MOV AL,BOOKING_VENUE_SLOT_LIST[BX]
+    CMP AL,CURRENT_VENUE_SLOT
+    JNE NEXT_SLOT
+
+    ; Check time slot
+    MOV AL,BOOKING_TIME_LIST[BX]
+    CMP AL,BOOKING_TIME_CURRENT
+    JNE NEXT_SLOT
+
+    ; Check day
+    MOV AL,BOOKING_DAY_LIST[BX]
+    CMP AL,CURRENT_BOOKING_DAY
+    JNE NEXT_SLOT
+
+    ; Check month
+    MOV AL,BOOKING_MONTH_LIST[BX]
+    CMP AL,CURRENT_BOOKING_MONTH
+    JNE NEXT_SLOT
+
+    ; Check year
+    PUSH BX
+    SHL BX,1
+    MOV AX,BOOKING_YEAR_LIST[BX]
+    CMP AX,CURRENT_BOOKING_YEAR
+    POP BX
+    JNE NEXT_SLOT
+
+    ; Same venue + date + time found
+    MOV AL,0
+    JMP CHECK_SLOT_DONE
+
+NEXT_SLOT:
+    INC BX
+    JMP CHECK_SLOT_LOOP
+
+SLOT_AVAILABLE:
+    MOV AL,1
+
+CHECK_SLOT_DONE:
+    POP DI
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    RET
+
+CHECK_TIME_AVAILABILITY ENDP

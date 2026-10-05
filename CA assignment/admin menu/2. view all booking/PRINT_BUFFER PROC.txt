@@ -1,0 +1,42 @@
+PRINT_BUFFER PROC
+line 3000
+    PUSH AX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+
+
+    MOV CL,[SI+1]
+    MOV CH,0
+
+    ADD SI,2
+
+
+PRINT_LOOP:
+
+    CMP CX,0
+    JE PRINT_DONE
+
+
+    MOV DL,[SI]
+
+    MOV AH,02H
+    INT 21H
+
+
+    INC SI
+    DEC CX
+
+    JMP PRINT_LOOP
+
+
+PRINT_DONE:
+
+    POP SI
+    POP DX
+    POP CX
+    POP AX
+
+    RET
+
+PRINT_BUFFER ENDP

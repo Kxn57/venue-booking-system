@@ -1,0 +1,147 @@
+DELETE_VENUE:     line 1435
+
+    ; Clear screen before displaying this function/page
+    MOV AH,00H
+    MOV AL,03H
+    INT 10H
+
+	MOV AH,09H
+    LEA DX,NEWLINE
+    INT 21H
+	
+    MOV AH,09H
+    LEA DX,deleteTitle
+    INT 21H
+
+    ; CHECK IF ANY VENUE EXISTS
+    CMP VENUE1_EXIST,1
+    JE DELETE_HAS_VENUE
+
+    CMP VENUE2_EXIST,1
+    JE DELETE_HAS_VENUE
+
+    CMP VENUE3_EXIST,1
+    JE DELETE_HAS_VENUE
+
+    MOV AH,09H
+    LEA DX,noVenueMsg
+    INT 21H
+    JMP MANAGE_VENUE
+
+
+DELETE_HAS_VENUE:
+
+    ; SHOW VENUE NUMBER + NAME
+    CALL DISPLAY_VENUE_LIST
+
+    MOV AH,09H
+    LEA DX,deleteMsg
+    INT 21H
+
+    MOV AH,01H
+    INT 21H
+
+
+    CMP AL,'1'
+    JNE DELETE_CHECK_2
+
+    CMP VENUE1_EXIST,1
+    JE DELETE1_OK
+
+    JMP DELETE_NOT_FOUND
+
+
+DELETE1_OK:
+
+    CALL CONFIRM_DELETE
+    CMP AL,'Y'
+    JE DELETE1_CONFIRMED
+    CMP AL,'y'
+    JE DELETE1_CONFIRMED
+    ; N = cancel deletion and return to Manage Venue
+    MOV AH,09H
+    LEA DX,deleteCancelledMsg
+    INT 21H
+    JMP MANAGE_VENUE
+
+DELETE1_CONFIRMED:
+    MOV VENUE1_EXIST,0
+    JMP DELETE_SUCCESS
+
+
+DELETE_CHECK_2:
+
+    CMP AL,'2'
+    JNE DELETE_CHECK_3
+
+    CMP VENUE2_EXIST,1
+    JE DELETE2_OK
+
+    JMP DELETE_NOT_FOUND
+
+
+DELETE2_OK:
+
+    CALL CONFIRM_DELETE
+    CMP AL,'Y'
+    JE DELETE2_CONFIRMED
+    CMP AL,'y'
+    JE DELETE2_CONFIRMED
+    ; N = cancel deletion and return to Manage Venue
+    MOV AH,09H
+    LEA DX,deleteCancelledMsg
+    INT 21H
+    JMP MANAGE_VENUE
+
+DELETE2_CONFIRMED:
+    MOV VENUE2_EXIST,0
+    JMP DELETE_SUCCESS
+
+
+DELETE_CHECK_3:
+
+    CMP AL,'3'
+    JNE DELETE_INVALID
+
+    CMP VENUE3_EXIST,1
+    JE DELETE3_OK
+
+    JMP DELETE_NOT_FOUND
+
+
+DELETE3_OK:
+
+    CALL CONFIRM_DELETE
+    CMP AL,'Y'
+    JE DELETE3_CONFIRMED
+    CMP AL,'y'
+    JE DELETE3_CONFIRMED
+    ; N = cancel deletion and return to Manage Venue
+    MOV AH,09H
+    LEA DX,deleteCancelledMsg
+    INT 21H
+    JMP MANAGE_VENUE
+
+DELETE3_CONFIRMED:
+    MOV VENUE3_EXIST,0
+
+
+DELETE_SUCCESS:
+
+    MOV AH,09H
+    LEA DX,venueDeletedMsg
+    INT 21H
+
+    JMP MANAGE_VENUE
+
+
+DELETE_NOT_FOUND:
+
+    CALL SHOW_NOT_FOUND
+    JMP DELETE_VENUE
+
+
+DELETE_INVALID:
+
+    CALL SHOW_INVALID
+    JMP DELETE_VENUE

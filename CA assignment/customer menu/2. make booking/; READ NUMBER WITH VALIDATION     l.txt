@@ -1,0 +1,88 @@
+; READ NUMBER WITH VALIDATION     line 2541
+; ==============================
+
+READ_NUMBER PROC
+
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+    PUSH DI
+    PUSH BP
+
+
+    MOV BP,SI
+    MOV DI,DX
+
+
+NUMBER_AGAIN:
+
+    MOV SI,BP
+
+    MOV BYTE PTR [SI+1],0
+
+
+    MOV AH,09H
+    MOV DX,DI
+    INT 21H
+
+
+    MOV AH,0AH
+    MOV DX,SI
+    INT 21H
+
+
+    MOV CL,[SI+1]
+    MOV CH,0
+
+
+    CMP CX,0
+    JE NUMBER_ERROR
+
+
+    ADD SI,2
+
+
+CHECK_DIGIT:
+
+    MOV BL,[SI]
+
+
+    CMP BL,'0'
+    JB NUMBER_ERROR
+
+
+    CMP BL,'9'
+    JA NUMBER_ERROR
+
+
+    INC SI
+    DEC CX
+
+
+    CMP CX,0
+    JNE CHECK_DIGIT
+
+
+    POP BP
+    POP DI
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+
+    RET
+
+
+NUMBER_ERROR:
+
+    MOV AH,09H
+    LEA DX,numberErrorMsg
+    INT 21H
+
+    JMP NUMBER_AGAIN
+
+
+READ_NUMBER ENDP

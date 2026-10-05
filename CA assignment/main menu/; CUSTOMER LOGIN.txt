@@ -1,0 +1,100 @@
+; CUSTOMER LOGIN
+; ==============================
+
+CUSTOMER_LOGIN:
+
+    ; Clear screen before displaying this function/page
+    MOV AH,00H
+    MOV AL,03H
+    INT 10H
+
+    MOV AH,09H
+    LEA DX,title1
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,title2
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,title3
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,title4
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,usernameMsg
+    INT 21H
+
+    MOV AH,0AH
+    LEA DX,usernameInput
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,passwordMsg
+    INT 21H
+
+    MOV AH,0AH
+    LEA DX,passwordInput
+    INT 21H
+
+    MOV AL,usernameInput+1
+    CMP AL,8
+    JE CUSTOMER_CHECK_USERNAME
+    JMP CUSTOMER_USERNAME_FAIL
+
+CUSTOMER_CHECK_USERNAME:
+    MOV AX,DS
+    MOV ES,AX
+    CLD
+    LEA SI,usernameInput+2
+    LEA DI,correctUsername
+    MOV CX,8
+    REPE CMPSB
+    JE CUSTOMER_CHECK_PASSWORD_LENGTH
+    JMP CUSTOMER_USERNAME_FAIL
+
+CUSTOMER_USERNAME_FAIL:
+    MOV AH,09H
+    LEA DX,invalidCustomerUsernameMsg
+    INT 21H
+    CALL PAUSE_LOGIN_ERROR
+    JMP MAIN_MENU
+
+CUSTOMER_CHECK_PASSWORD_LENGTH:
+    MOV AL,passwordInput+1
+    CMP AL,4
+    JE CUSTOMER_CHECK_PASSWORD
+    JMP CUSTOMER_PASSWORD_FAIL
+
+CUSTOMER_CHECK_PASSWORD:
+    MOV AX,DS
+    MOV ES,AX
+    CLD
+    LEA SI,passwordInput+2
+    LEA DI,correctPassword
+    MOV CX,4
+    REPE CMPSB
+    JE CUSTOMER_LOGIN_SUCCESS
+    JMP CUSTOMER_PASSWORD_FAIL
+
+CUSTOMER_PASSWORD_FAIL:
+    MOV AH,09H
+    LEA DX,invalidCustomerPasswordMsg
+    INT 21H
+    CALL PAUSE_LOGIN_ERROR
+    JMP MAIN_MENU
+
+CUSTOMER_LOGIN_SUCCESS:
+    MOV AH,09H
+    LEA DX,loginSuccessMsg
+    INT 21H
+    JMP CUSTOMER_MENU_LOOP
+
+CUSTOMER_LOGIN_FAIL:
+    MOV AH,09H
+    LEA DX,loginFailMsg
+    INT 21H
+    JMP MAIN_MENU

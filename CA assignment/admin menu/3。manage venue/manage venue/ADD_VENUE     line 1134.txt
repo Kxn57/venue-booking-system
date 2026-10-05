@@ -1,0 +1,81 @@
+ADD_VENUE:     line 1134
+
+    ; Clear screen before displaying this function/page
+    MOV AH,00H
+    MOV AL,03H
+    INT 10H
+
+    ; SHOW CURRENT VENUES FIRST
+    CALL DISPLAY_VENUE_LIST
+
+    ; FIND FIRST EMPTY SLOT
+    CMP VENUE1_EXIST,0
+    JNE ADD_CHECK_2
+
+    MOV AH,09H
+    LEA DX,addSlotMsg
+    INT 21H
+
+    MOV DL,'1'
+    MOV AH,02H
+    INT 21H
+
+    CALL SET_VENUE1
+    CALL INPUT_VENUE
+    MOV VENUE1_EXIST,1
+    JMP ADD_SUCCESS
+
+
+ADD_CHECK_2:
+
+    CMP VENUE2_EXIST,0
+    JNE ADD_CHECK_3
+
+    MOV AH,09H
+    LEA DX,addSlotMsg
+    INT 21H
+
+    MOV DL,'2'
+    MOV AH,02H
+    INT 21H
+
+    CALL SET_VENUE2
+    CALL INPUT_VENUE
+    MOV VENUE2_EXIST,1
+    JMP ADD_SUCCESS
+
+
+ADD_CHECK_3:
+
+    CMP VENUE3_EXIST,0
+    JNE VENUE_FULL
+
+    MOV AH,09H
+    LEA DX,addSlotMsg
+    INT 21H
+
+    MOV DL,'3'
+    MOV AH,02H
+    INT 21H
+
+    CALL SET_VENUE3
+    CALL INPUT_VENUE
+    MOV VENUE3_EXIST,1
+
+
+ADD_SUCCESS:
+
+    MOV AH,09H
+    LEA DX,venueAddedMsg
+    INT 21H
+
+    JMP MANAGE_VENUE
+
+
+VENUE_FULL:
+
+    MOV AH,09H
+    LEA DX,venueFullMsg
+    INT 21H
+
+    JMP MANAGE_VENUE

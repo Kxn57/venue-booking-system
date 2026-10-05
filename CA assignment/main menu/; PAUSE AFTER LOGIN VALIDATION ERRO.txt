@@ -1,0 +1,12 @@
+; PAUSE AFTER LOGIN VALIDATION ERROR
+; ==============================
+
+PAUSE_LOGIN_ERROR PROC
+    MOV AH,09H
+    LEA DX,loginErrorContinueMsg
+    INT 21H
+
+    MOV AH,01H
+    INT 21H
+    RET					结束这个 procedure，回到刚才 CALL 的地方。
+PAUSE_LOGIN_ERROR ENDP

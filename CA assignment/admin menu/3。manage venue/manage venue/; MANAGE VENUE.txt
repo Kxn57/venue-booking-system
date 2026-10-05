@@ -1,0 +1,90 @@
+; MANAGE VENUE
+; ==============================
+
+MANAGE_VENUE:
+
+    ; Clear screen before displaying this function/page
+    MOV AH,00H
+    MOV AL,03H
+    INT 10H
+
+    MOV AH,09H
+    LEA DX,manageTitle
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,manage1
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,manage2
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,manage3
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,manage4
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,choiceMsg
+    INT 21H
+
+    MOV AH,01H
+    INT 21H
+
+
+    CMP AL,'1'				add venue
+    JNE CHECK_MANAGE2
+    CALL CONFIRM_ADD
+    CMP AL,'Y'
+    JE GO_ADD_VENUE
+    CMP AL,'y'
+    JE GO_ADD_VENUE
+    MOV AH,09H
+    LEA DX,addCancelledMsg		如果不是y就cancel add venue
+    INT 21H
+    JMP MANAGE_VENUE
+
+GO_ADD_VENUE:
+    JMP ADD_VENUE
+
+
+CHECK_MANAGE2:				edit venue
+
+    CMP AL,'2'
+    JNE CHECK_MANAGE3
+    CALL CONFIRM_EDIT
+    CMP AL,'Y'
+    JE GO_EDIT_VENUE
+    CMP AL,'y'
+    JE GO_EDIT_VENUE
+    MOV AH,09H
+    LEA DX,editCancelledMsg
+    INT 21H
+    JMP MANAGE_VENUE
+
+GO_EDIT_VENUE:
+    JMP EDIT_VENUE
+
+
+CHECK_MANAGE3:
+
+    CMP AL,'3'
+    JNE CHECK_MANAGE4
+    JMP DELETE_VENUE
+
+
+CHECK_MANAGE4:
+
+    CMP AL,'4'
+    JNE MANAGE_INVALID
+    JMP ADMIN_MENU
+
+
+MANAGE_INVALID:
+
+    CALL SHOW_INVALID
+    JMP MANAGE_VENUE

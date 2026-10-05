@@ -1,0 +1,117 @@
+PRINT_RECEIPT PROC    line 3274
+
+    ; Clear screen before receipt
+    MOV AH,00H
+    MOV AL,03H
+    INT 10H
+
+    ; ==============================
+    ; RECEIPT HEADER
+    ; ==============================
+
+    MOV AH,09H
+    LEA DX,receiptTitle
+    INT 21H
+
+    ; Booking number
+    MOV AH,09H
+    LEA DX,receiptBookingNoMsg
+    INT 21H
+    XOR AX,AX
+    MOV AL,bookingCount
+    CALL PRINT_NUMBER
+
+    ; Booking date (current system date)
+    MOV AH,09H
+    LEA DX,receiptDateMsg
+    INT 21H
+    CALL PRINT_CURRENT_DATE
+
+    ; Booking time slot
+    MOV AH,09H
+    LEA DX,receiptTimeMsg
+    INT 21H
+    MOV AL,BOOKING_TIME_CURRENT
+    CALL PRINT_TIME_SLOT
+
+    ; Customer name
+    MOV AH,09H
+    LEA DX,receiptCustomerMsg
+    INT 21H
+    LEA SI,CUSTOMER_NAME
+    CALL PRINT_BUFFER
+
+    ; Phone number
+    MOV AH,09H
+    LEA DX,receiptPhoneMsg
+    INT 21H
+    LEA SI,CUSTOMER_PHONE
+    CALL PRINT_BUFFER
+
+    ; Venue
+    MOV AH,09H
+    LEA DX,receiptVenueMsg
+    INT 21H
+    MOV SI,CURRENT_NAME
+    CALL PRINT_BUFFER
+
+    MOV AH,09H
+    LEA DX,receiptSeparatorMsg
+    INT 21H
+
+    ; Unit price
+    MOV AH,09H
+    LEA DX,receiptUnitPriceMsg
+    INT 21H
+    MOV AX,VENUE_PRICE_VALUE
+    CALL PRINT_NUMBER
+
+    ; Quantity
+    MOV AH,09H
+    LEA DX,receiptQuantityMsg
+    INT 21H
+    MOV AX,BOOKING_QUANTITY
+    CALL PRINT_NUMBER
+
+    ; Subtotal
+    MOV AH,09H
+    LEA DX,receiptSubtotalMsg
+    INT 21H
+    MOV AX,SUBTOTAL_VALUE
+    CALL PRINT_NUMBER
+
+    ; Service charge
+    MOV AH,09H
+    LEA DX,receiptServiceMsg
+    INT 21H
+    MOV AX,SERVICE_CHARGE_VALUE
+    CALL PRINT_NUMBER
+
+    ; Total
+    MOV AH,09H
+    LEA DX,receiptTotalMsg
+    INT 21H
+    MOV AX,TOTAL_VALUE
+    CALL PRINT_NUMBER
+
+    ; Amount paid
+    MOV AH,09H
+    LEA DX,receiptPaidMsg
+    INT 21H
+    MOV AX,PAYMENT_VALUE
+    CALL PRINT_NUMBER
+
+    ; Change
+    MOV AH,09H
+    LEA DX,receiptChangeMsg
+    INT 21H
+    MOV AX,CHANGE_VALUE
+    CALL PRINT_NUMBER
+
+    MOV AH,09H
+    LEA DX,receiptThanksMsg
+    INT 21H
+
+    RET
+
+PRINT_RECEIPT ENDP

@@ -1,0 +1,112 @@
+SAVE_BOOKING_RECORD PROC    line 3156
+
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
+    PUSH DI
+    PUSH ES
+
+    CMP bookingCount,10
+    JB SAVE_BOOKING_START
+
+    MOV AL,0
+    JMP SAVE_BOOKING_DONE
+
+SAVE_BOOKING_START:
+
+    ; Buffer offset = bookingCount * 32
+    XOR BX,BX
+    MOV BL,bookingCount
+    SHL BX,1
+    SHL BX,1
+    SHL BX,1
+    SHL BX,1
+    SHL BX,1
+
+    ; ES must point to the data segment for MOVSB
+    MOV AX,DS
+    MOV ES,AX
+    CLD
+
+    ; Copy customer name buffer
+    LEA SI,CUSTOMER_NAME
+    LEA DI,BOOKING_CUSTOMER_LIST
+    ADD DI,BX
+    MOV CX,32
+    REP MOVSB
+
+    ; Copy customer phone buffer (15 digits max)
+    LEA SI,CUSTOMER_PHONE
+    LEA DI,BOOKING_PHONE_LIST
+    ADD DI,BX
+    MOV CX,17
+    REP MOVSB
+
+    ; Copy selected venue name buffer
+    MOV SI,CURRENT_NAME
+    LEA DI,BOOKING_VENUE_LIST
+    ADD DI,BX
+    MOV CX,32
+    REP MOVSB
+
+    ; Word offset = bookingCount * 2
+    XOR BX,BX
+    MOV BL,bookingCount
+    SHL BX,1
+
+    MOV AX,VENUE_PRICE_VALUE
+    MOV BOOKING_PRICE_LIST[BX],AX
+
+    MOV AX,BOOKING_QUANTITY
+    MOV BOOKING_QUANTITY_LIST[BX],AX
+
+    MOV AX,SUBTOTAL_VALUE
+    MOV BOOKING_SUBTOTAL_LIST[BX],AX
+
+    MOV AX,SERVICE_CHARGE_VALUE
+    MOV BOOKING_SERVICE_LIST[BX],AX
+
+    MOV AX,TOTAL_VALUE
+    MOV BOOKING_TOTAL_LIST[BX],AX
+
+    MOV AX,PAYMENT_VALUE
+    MOV BOOKING_PAID_LIST[BX],AX
+
+    MOV AX,CHANGE_VALUE
+    MOV BOOKING_CHANGE_LIST[BX],AX
+
+    ; Get current system date and save it with this booking
+    MOV AH,2AH
+    INT 21H
+
+    ; DI = booking index for byte arrays
+    MOV DI,BX
+    SHR DI,1
+
+    MOV BOOKING_DAY_LIST[DI],DL
+    MOV BOOKING_MONTH_LIST[DI],DH
+    MOV BOOKING_YEAR_LIST[BX],CX
+
+    ; Save selected time slot and venue number
+    MOV AL,BOOKING_TIME_CURRENT
+    MOV BOOKING_TIME_LIST[DI],AL
+
+    MOV AL,CURRENT_VENUE_SLOT
+    MOV BOOKING_VENUE_SLOT_LIST[DI],AL
+
+    INC bookingCount
+    MOV AL,1
+
+SAVE_BOOKING_DONE:
+
+    POP ES
+    POP DI
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+
+    RET
+
+SAVE_BOOKING_RECORD ENDP

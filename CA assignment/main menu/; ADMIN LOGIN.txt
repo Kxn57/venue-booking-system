@@ -1,0 +1,106 @@
+; ADMIN LOGIN
+; ==============================
+
+ADMIN_LOGIN:
+    ; Clear screen before displaying this function/page
+    MOV AH,00H
+    MOV AL,03H
+    INT 10H
+
+MOV AH,09h
+LEA DX,nl ;new line
+INT 21H
+
+    MOV AH,09H
+    LEA DX,admintitle1
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,admintitle2
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,admintitle3
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,admintitle4
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,adminusernameMsg
+    INT 21H
+
+    MOV AH,0AH
+    LEA DX,adminusernameInput     让 DOS 按照一个 input buffer 的格式来接收一整串文字
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,adminpasswordMsg
+    INT 21H
+
+    MOV AH,0AH
+    LEA DX,adminpasswordInput    让 DOS 按照一个 input buffer 的格式来接收一整串文字
+    INT 21H
+
+    MOV AL,adminusernameInput+1		├── +1   actual number of characters entered
+    CMP AL,5				Username 的长度是不是 5 个 characters？
+    JE ADMIN_CHECK_USERNAME		是的话就跳admin check username
+    JMP ADMIN_USERNAME_FAIL		如果不是就去admin fail
+
+ADMIN_CHECK_USERNAME:
+    MOV AX,DS
+    MOV ES,AX
+    CLD					从前面往后面一个 character 一个 character 比
+    LEA SI,adminusernameInput+2		用户实际输入的第一个 character。从a开始check
+    LEA DI,correctAdminUsername		DI → 正确答案：admin
+    MOV CX,5
+    REPE CMPSB				比较 5 个 characters
+    JE ADMIN_CHECK_PASSWORD_LENGTH	对的话就跳password length
+    JMP ADMIN_USERNAME_FAIL		错的话就去admin fail
+
+ADMIN_USERNAME_FAIL:
+    MOV AH,09H
+    LEA DX,invalidAdminUsernameMsg 	display错msg，然后回到main menu
+    INT 21H
+    CALL PAUSE_LOGIN_ERROR		PRESS ANY KEY TO RETURN TO MAIN MENU...（这个output）
+    JMP MAIN_MENU
+
+ADMIN_CHECK_PASSWORD_LENGTH:
+    MOV AL,adminpasswordInput+1
+    CMP AL,4				密码是1234，所以compare四个数字
+    JE ADMIN_CHECK_PASSWORD		对的话就去check pass
+    JMP ADMIN_PASSWORD_FAIL		错的话就fail
+
+ADMIN_CHECK_PASSWORD:
+    MOV AX,DS
+    MOV ES,AX
+    CLD
+    LEA SI,adminpasswordInput+2		用户输入的pass
+    LEA DI,correctAdminPassword		对比真的pass
+    MOV CX,4
+    REPE CMPSB				对比4个digit
+    JE ADMIN_LOGIN_SUCCESS		对的话就login success
+    JMP ADMIN_PASSWORD_FAIL		错的话就fail
+
+ADMIN_PASSWORD_FAIL:
+    MOV AH,09H
+    LEA DX,invalidAdminPasswordMsg
+    INT 21H
+    CALL PAUSE_LOGIN_ERROR
+    JMP MAIN_MENU
+
+ADMIN_LOGIN_SUCCESS:
+	MOV AH,09h
+	LEA DX,nl ;new line
+	INT 21H
+    MOV AH,09H
+    LEA DX,loginSuccessMsg
+    INT 21H
+    JMP ADMIN_MENU
+
+ADMIN_LOGIN_FAIL:
+    MOV AH,09H
+    LEA DX,loginFailMsg
+    INT 21H
+    JMP MAIN_MENU

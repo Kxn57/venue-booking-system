@@ -1,0 +1,335 @@
+Ca code guide
+
+; ==============================
+; MAIN TITLE
+; ==============================
+
+line1 DB 13,10,'==================================',13,10,'$'
+systemtitle DB '       VENUE BOOKING SYSTEM',13,10,'$'
+line2 DB '==================================',13,10,'$'
+
+menu1 DB 13,10,'1. Admin Login',13,10,'$'
+menu2 DB '2. Customer Login',13,10,'$'
+menu3 DB '3. Exit',13,10,'$'
+
+choiceMsg DB 13,10,13,10,'Enter your choice: $'
+
+invalidMsg DB 13,10,'Invalid choice! Please try again.$'
+
+adminMsg DB 13,10,'Admin Login selected.$'
+customerMsg DB 13,10,'Customer Login selected.$'
+exitMsg DB 13,10,'Thank you for using Venue Booking System!$'
+
+
+; ==============================
+; ADMIN MENU
+; ==============================
+
+adminTitle DB 13,10,13,10,'==================================',13,10,'           ADMIN MENU',13,10,'==================================',13,10,'$'
+
+admin1 DB 13,10,'1. VIEW ALL VENUES',13,10,'$'
+admin2 DB 13,10,'2. VIEW ALL BOOKINGS',13,10,'$'
+admin3 DB 13,10,'3. MANAGE VENUE',13,10,'$'
+admin4 DB 13,10,'4. LOGOUT',13,10,'$'
+
+
+; ==============================
+; MANAGE VENUE MENU
+; ==============================
+
+manageTitle DB 13,10,13,10,'==================================',13,10,'          MANAGE VENUE',13,10,'==================================',13,10,'$'
+
+manage1 DB 13,10,'1. ADD VENUE',13,10,'$'
+manage2 DB 13,10,'2. EDIT VENUE',13,10,'$'
+manage3 DB 13,10,'3. DELETE VENUE',13,10,'$'
+manage4 DB 13,10,'4. BACK',13,10,'$'
+
+
+; ==============================
+; VENUE INPUT
+; ==============================
+
+addTitle DB 13,10,'=== ADD / EDIT VENUE ===$'
+
+venueNameMsg DB 13,10,'ENTER VENUE NAME: $'
+venuePriceMsg DB 13,10,'ENTER VENUE PRICE: RM$'
+venueCapacityMsg DB 13,10,'ENTER VENUE CAPACITY: $'
+addSlotMsg DB 13,10,'NEW VENUE WILL USE SLOT: $'
+
+venueAddedMsg DB 13,10,'VENUE ADDED SUCCESSFULLY!$'
+venueUpdatedMsg DB 13,10,'VENUE UPDATED SUCCESSFULLY!$'
+venueDeletedMsg DB 13,10,'VENUE DELETED SUCCESSFULLY!$'
+
+venueFullMsg DB 13,10,'MAXIMUM 3 VENUES REACHED!$'
+venueNotFoundMsg DB 13,10,'VENUE DOES NOT EXIST!$'
+
+
+; ==============================
+; VALIDATION
+; ==============================
+
+nameErrorMsg DB 13,10,'ERROR: VENUE NAME CANNOT BE EMPTY!$'
+numberErrorMsg DB 13,10,'ERROR: ENTER NUMBERS ONLY!$'
+positiveNumberMsg DB 13,10,'ERROR: VALUE MUST BE GREATER THAN 0!$'
+
+
+; ==============================
+; VIEW VENUES
+; ==============================
+
+allVenueTitle DB 13,10,13,10,'==================================',13,10,'           ALL VENUES',13,10,'==================================',13,10,'$'
+
+venue1Title DB 13,10,'--- VENUE 1 ---$'
+venue2Title DB 13,10,'--- VENUE 2 ---$'
+venue3Title DB 13,10,'--- VENUE 3 ---$'
+
+showName DB 13,10,'VENUE NAME: $'
+showPrice DB 13,10,'VENUE PRICE: RM$'
+showCapacity DB 13,10,'VENUE CAPACITY: $'
+
+noVenueMsg DB 13,10,'NO VENUE AVAILABLE.$'
+NEWLINE DB 13,10,'$'
+
+
+; ==============================
+; EDIT / DELETE
+; ==============================
+
+editTitle DB 13,10,'=== EDIT VENUE ===$'
+editMsg DB 13,10,'ENTER VENUE NUMBER TO EDIT (1-3): $'
+
+deleteTitle DB 13,10,'=== DELETE VENUE ===$'
+deleteMsg DB 13,10,'ENTER VENUE NUMBER TO DELETE (1-3): $'
+confirmDeleteMsg DB 13,10,'ARE YOU SURE YOU WANT TO DELETE THIS VENUE? (Y/N): $'
+confirmLogoutMsg DB 13,10,'ARE YOU SURE YOU WANT TO LOGOUT? (Y/N): $'
+confirmExitMsg DB 13,10,'ARE YOU SURE YOU WANT TO EXIT? (Y/N): $'
+confirmYesNoMsg DB 13,10,'PLEASE ENTER Y OR N: $'
+deleteCancelledMsg DB 13,10,'DELETE CANCELLED. RETURNING TO MANAGE VENUE...$'
+confirmAddMsg DB 13,10,'ARE YOU SURE YOU WANT TO ADD A NEW VENUE? (Y/N): $'
+confirmEditMsg DB 13,10,'ARE YOU SURE YOU WANT TO EDIT A VENUE? (Y/N): $'
+addCancelledMsg DB 13,10,'ADD CANCELLED. RETURNING TO MANAGE VENUE...$'
+editCancelledMsg DB 13,10,'EDIT CANCELLED. RETURNING TO MANAGE VENUE...$'
+
+;booking msg
+
+bookingListTitle DB 13,10,13,10,'==================================',13,10,'          ALL BOOKINGS',13,10,'==================================',13,10,'$'
+noBookingMsg DB 13,10,'NO BOOKINGS FOUND.$'
+phoneNotFoundMsg DB 13,10,'NO BOOKING FOUND FOR THIS PHONE NUMBER.$'
+bookingNoMsg DB 13,10,'BOOKING NUMBER: $'
+bookingCustomerMsg DB 13,10,'CUSTOMER NAME: $'
+bookingPhoneMsg DB 13,10,'PHONE NUMBER: $'
+bookingVenueMsg DB 13,10,'VENUE: $'
+bookingPriceMsg DB 13,10,'PRICE: RM$'
+bookingPaidMsg DB 13,10,'AMOUNT PAID: RM$'
+bookingChangeMsg DB 13,10,'CHANGE: RM$'
+bookingDateMsg DB 13,10,'DATE: $'
+bookingTimeMsg DB 13,10,'TIME: $'
+bookingQuantityReportMsg DB 13,10,'QUANTITY: $'
+bookingSubtotalReportMsg DB 13,10,'SUBTOTAL: RM$'
+bookingServiceReportMsg DB 13,10,'SERVICE CHARGE 6%: RM$'
+bookingTotalReportMsg DB 13,10,'TOTAL: RM$'
+bookingFullMsg DB 13,10,'MAXIMUM 10 BOOKINGS REACHED!$'
+logoutMsg DB 13,10,'LOGOUT SUCCESSFUL!$'
+
+
+; ==============================
+; DEFAULT VENUE 1
+; ==============================
+
+VENUE1_NAME DB 30,10,'Grand Hall',20 DUP(?)
+VENUE1_PRICE DB 5,3,'200',3 DUP(?)
+VENUE1_CAPACITY DB 4,3,'200',2 DUP(?)
+VENUE1_EXIST DB 1
+
+
+; ==============================
+; DEFAULT VENUE 2
+; ==============================
+
+VENUE2_NAME DB 30,12,'Meeting Room',18 DUP(?)
+VENUE2_PRICE DB 5,3,'150',3 DUP(?)
+VENUE2_CAPACITY DB 4,2,'30',3 DUP(?)
+VENUE2_EXIST DB 1
+
+
+; ==============================
+; EMPTY VENUE 3
+; ==============================
+
+VENUE3_NAME DB 30,0,31 DUP(?)
+VENUE3_PRICE DB 5,0,6 DUP(?)
+VENUE3_CAPACITY DB 4,0,5 DUP(?)
+VENUE3_EXIST DB 0
+
+
+; ==============================
+; POINTERS
+; ==============================
+
+CURRENT_NAME DW ?          (DW is 需要比较大的空间来存数值)
+CURRENT_PRICE DW ?
+CURRENT_CAPACITY DW ?
+CURRENT_TITLE DW ?
+
+; ==============================
+; CUSTOMER LOGIN
+; ==============================
+
+title1      DB 13,10,'==================================',13,10,'$'
+title2      DB '       VENUE BOOKING SYSTEM',13,10,'$'
+title3      DB '         CUSTOMER LOGIN',13,10,'$'
+title4      DB '==================================',13,10,'$'
+
+usernameMsg DB 13,10,'Enter Username: $'
+passwordMsg DB 13,10,'Enter Password: $'
+
+usernameInput DB 20, ?, 20 DUP('$')
+passwordInput DB 20, ?, 20 DUP('$')
+
+correctUsername DB 'customer'
+correctPassword DB '1234'
+
+; ==============================
+; ADMIN LOGIN
+; ==============================
+
+admintitle1 DB 13,10,'==================================',13,10,'$'
+admintitle2 DB '       VENUE BOOKING SYSTEM',13,10,'$'
+admintitle3 DB '         ADMIN LOGIN',13,10,'$'
+admintitle4 DB '==================================',13,10,'$'
+
+adminusernameMsg DB 13,10,'Enter Username: $'
+adminpasswordMsg DB 13,10,'Enter Password: $'
+
+adminusernameInput DB 20, ?, 20 DUP('$')    再预留 20 个 Byte，暂时不要设定内容。
+adminpasswordInput DB 20, ?, 20 DUP('$')
+
+correctAdminUsername DB 'admin'
+correctAdminPassword DB '1234'
+
+; ==============================
+; LOGIN MESSAGES
+; ==============================
+
+loginSuccessMsg DB 13,10,'Login Successful!$'
+loginFailMsg    DB 13,10,'Invalid Username or Password!$'
+invalidAdminUsernameMsg DB 13,10,'ERROR: Invalid Admin Username!$'
+invalidAdminPasswordMsg DB 13,10,'ERROR: Invalid Admin Password!$'
+invalidCustomerUsernameMsg DB 13,10,'ERROR: Invalid Customer Username!$'
+invalidCustomerPasswordMsg DB 13,10,'ERROR: Invalid Customer Password!$'
+loginErrorContinueMsg DB 13,10,13,10,'PRESS ANY KEY TO RETURN TO MAIN MENU...$'
+
+; ==============================
+; CUSTOMER MENU
+; ==============================
+
+customerMenuTitle DB 13,10,13,10,'==================================',13,10,'         CUSTOMER MENU',13,10,'==================================',13,10,'$'
+customerMenu      DB '$'
+menuLine1 DB 13,10,'1. View Available Venues',13,10,'$'
+menuLine2 DB 13,10,'2. Make Booking',13,10,'$'
+menuLine3 DB 13,10,'3. View Booking Receipt',13,10,'$'
+menuLine5 DB 13,10,'4. Logout',13,10,'$'
+customerChoiceMsg DB 13,10,'Enter your choice: $'
+menuChoice        DB ?
+invalidChoiceMsg DB 13,10,'Invalid choice! Please try again.$'
+
+; ==============================
+; CUSTOMER BOOKING / E-RECEIPT DATA
+; ==============================
+
+customerBookingTitle DB 13,10,13,10,'==================================',13,10,'        CUSTOMER BOOKING',13,10,'==================================',13,10,'$'
+customerNameMsg      DB 13,10,'ENTER YOUR NAME: $'
+customerPhoneMsg     DB 13,10,'ENTER PHONE NUMBER: $'
+selectVenueMsg       DB 13,10,'SELECT VENUE NUMBER (1-3): $'
+bookingTimeMsgInput   DB 13,10,'SELECT TIME SLOT (1-4): $'
+timeSlot1Msg          DB 13,10,'1. 09:00 AM - 11:00 AM$'
+timeSlot2Msg          DB 13,10,'2. 11:00 AM - 01:00 PM$'
+timeSlot3Msg          DB 13,10,'3. 02:00 PM - 04:00 PM$'
+timeSlot4Msg          DB 13,10,'4. 04:00 PM - 06:00 PM$'
+receiptTime1Msg        DB '09:00 AM - 11:00 AM$'
+receiptTime2Msg        DB '11:00 AM - 01:00 PM$'
+receiptTime3Msg        DB '02:00 PM - 04:00 PM$'
+receiptTime4Msg        DB '04:00 PM - 06:00 PM$'
+invalidTimeMsg        DB 13,10,'ERROR: INVALID TIME SLOT! PLEASE SELECT 1-4.$'
+bookingQuantityMsg    DB 13,10,'HOW MANY CAPACITY DO YOU WANT TO BOOK: $'
+quantityTooHighMsg    DB 13,10,'NOT ENOUGH CAPACITY! PLEASE ENTER A SMALLER QUANTITY.$'
+bookingSuccessMsg    DB 13,10,'BOOKING SUCCESSFUL!$'
+bookingInvalidMsg    DB 13,10,'INVALID OR UNAVAILABLE VENUE!$'
+capacityFullMsg DB 13,10,'SORRY, THIS VENUE IS FULL! PLEASE SELECT ANOTHER VENUE.$'
+timeBookedMsg DB 13,10,'ERROR: THIS VENUE AND TIME SLOT IS ALREADY BOOKED! PLEASE SELECT ANOTHER TIME.$'
+
+paymentTitle         DB 13,10,13,10,'========================================',13,10,'               PAYMENT',13,10,'========================================',13,10,'$'
+paymentUnitPriceMsg  DB 13,10,'UNIT PRICE       : RM$'
+paymentQuantityMsg   DB 13,10,'QUANTITY         : $'
+paymentSubtotalMsg   DB 13,10,'SUBTOTAL         : RM$'
+paymentServiceMsg    DB 13,10,'SERVICE CHARGE 6%: RM$'
+paymentTotalMsg      DB 13,10,'----------------------------------------',13,10,'TOTAL AMOUNT     : RM$'
+paymentAmountMsg     DB 13,10,13,10,'ENTER AMOUNT TO PAY: RM$'
+paymentSuccessMsg    DB 13,10,'PAYMENT SUCCESSFUL!$'
+notEnoughMsg         DB 13,10,'NOT ENOUGH PAYMENT! PLEASE PAY AGAIN.$'
+changeMsg            DB 13,10,'CHANGE           : RM$'
+receiptContinueMsg   DB 13,10,13,10,'PRESS ANY KEY TO RETURN TO CUSTOMER MENU...$'
+
+PAYMENT_INPUT DB 6,0,6 DUP(?)
+BOOKING_QUANTITY_INPUT DB 5,0,5 DUP(?)
+VENUE_PRICE_VALUE DW ?
+BOOKING_QUANTITY  DW ?
+SUBTOTAL_VALUE    DW ?
+SERVICE_CHARGE_VALUE DW ?
+TOTAL_VALUE       DW ?
+PAYMENT_VALUE     DW ?
+CHANGE_VALUE      DW ?
+
+receiptTitle         DB 13,10,'================================================',13,10,'                  E-RECEIPT',13,10,'================================================',13,10,'$'
+receiptCustomerMsg   DB 13,10,'CUSTOMER NAME   : $'
+receiptPhoneMsg      DB 13,10,'PHONE NUMBER    : $'
+receiptVenueMsg      DB 13,10,'VENUE           : $'
+receiptBookingNoMsg  DB 13,10,'BOOKING NUMBER  : $'
+receiptDateMsg       DB 13,10,'DATE            : $'
+receiptTimeMsg       DB 13,10,'TIME            : $'
+receiptUnitPriceMsg  DB 13,10,'UNIT PRICE      : RM$'
+receiptQuantityMsg   DB 13,10,'QUANTITY        : $'
+receiptSubtotalMsg   DB 13,10,'SUBTOTAL        : RM$'
+receiptServiceMsg    DB 13,10,'SERVICE CHARGE  : RM$'
+receiptTotalMsg      DB 13,10,'TOTAL AMOUNT    : RM$'
+receiptPaidMsg       DB 13,10,'AMOUNT PAID     : RM$'
+receiptChangeMsg     DB 13,10,'CHANGE RETURNED : RM$'
+receiptSeparatorMsg DB 13,10,'------------------------------------------------',13,10,'$'
+receiptThanksMsg     DB 13,10,13,10,'          THANK YOU FOR YOUR BOOKING!',13,10,'================================================',13,10,'$'
+
+CUSTOMER_NAME DB 30,0,30 DUP(?)
+CUSTOMER_PHONE DB 15,0,15 DUP(?)
+bookingCount  DB 0
+viewBookingIndex DB 0
+
+; Store up to 10 completed bookings
+BOOKING_CUSTOMER_LIST DB 320 DUP(0)   只有db是这样320 dup 0 就是有320 byte ， 1byte 当作一个字母或者数字
+BOOKING_PHONE_LIST    DB 170 DUP(0)
+BOOKING_VENUE_LIST    DB 320 DUP(0)
+BOOKING_PRICE_LIST    DW 10 DUP(0)
+BOOKING_QUANTITY_LIST DW 10 DUP(0)     dw是2byte，所以这个10还要multiply 2 才是他可以拥有的byte
+BOOKING_SUBTOTAL_LIST DW 10 DUP(0)
+BOOKING_SERVICE_LIST DW 10 DUP(0)
+BOOKING_TOTAL_LIST   DW 10 DUP(0)
+BOOKING_PAID_LIST     DW 10 DUP(0)
+BOOKING_CHANGE_LIST   DW 10 DUP(0)
+
+; Store booking date/time for up to 10 bookings
+BOOKING_DAY_LIST       DB 10 DUP(0)
+BOOKING_MONTH_LIST     DB 10 DUP(0)
+BOOKING_YEAR_LIST      DW 10 DUP(0)
+BOOKING_TIME_LIST      DB 10 DUP(0)
+BOOKING_VENUE_SLOT_LIST DB 10 DUP(0)
+BOOKING_TIME_CURRENT   DB 0
+CURRENT_VENUE_SLOT     DB 0
+CURRENT_BOOKING_DAY    DB 0
+CURRENT_BOOKING_MONTH  DB 0
+CURRENT_BOOKING_YEAR   DW 0
+
+viewVenueContinueMsg  DB 13,10,13,10,'PRESS ANY KEY TO RETURN TO ADMIN MENU...$'
+customerVenueContinueMsg DB 13,10,13,10,'PRESS ANY KEY TO RETURN TO CUSTOMER MENU...$'
+bookingSeparator       DB '----------------------------------------',13,10,'$'
+viewBookingNextMsg     DB 13,10,13,10,'PRESS ANY KEY TO VIEW NEXT BOOKING...$'
+viewBookingContinueMsg DB 13,10,13,10,'PRESS ANY KEY TO RETURN TO ADMIN MENU...$'
+;Newline
+nl db 0ah,0dh,"$"

@@ -1,0 +1,28 @@
+CONFIRM_ADD PROC     line  3562
+
+CONFIRM_ADD_AGAIN:
+    MOV AH,09H
+    LEA DX,confirmAddMsg
+    INT 21H
+
+    MOV AH,01H
+    INT 21H
+
+    CMP AL,'Y'
+    JE CONFIRM_ADD_DONE
+    CMP AL,'y'
+    JE CONFIRM_ADD_DONE
+    CMP AL,'N'
+    JE CONFIRM_ADD_DONE
+    CMP AL,'n'
+    JE CONFIRM_ADD_DONE
+
+    MOV AH,09H
+    LEA DX,confirmYesNoMsg
+    INT 21H
+    JMP CONFIRM_ADD_AGAIN
+
+CONFIRM_ADD_DONE:
+    RET
+
+CONFIRM_ADD ENDP

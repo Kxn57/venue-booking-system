@@ -1,0 +1,60 @@
+; MAIN SYSTEM MENU
+; ==============================
+
+MAIN_MENU:
+    ; Clear screen before displaying the main menu
+    MOV AH,00H
+    MOV AL,03H
+    INT 10H
+
+    MOV AH,09H
+    LEA DX,line1
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,systemtitle
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,line2
+    INT 21H
+	
+    MOV AH,09H
+    LEA DX,menu1
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,menu2
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,menu3
+    INT 21H
+	
+    MOV AH,09H
+    LEA DX,choiceMsg
+    INT 21H
+
+    MOV AH,01H    （input）
+    INT 21H
+	
+CHECK_MAIN_1:              check是不是1，不是1就跳去第二个，是1就去admin login
+    CMP AL,'1'
+    JNE CHECK_MAIN_2
+    JMP ADMIN_LOGIN
+
+CHECK_MAIN_2:               check是不是2，不是2就跳去第三个，是1就去customer login
+    CMP AL,'2'
+    JNE CHECK_MAIN_3
+    JMP CUSTOMER_LOGIN
+
+CHECK_MAIN_3:                   check是不是3，不是3就跳去invalid main，是3就去exit program    
+    CMP AL,'3'
+    JNE INVALID_MAIN
+    JMP EXIT_PROGRAM
+
+INVALID_MAIN:                  弹invalid msg出来，然后回去main menu，重新打过
+    MOV AH,09H
+    LEA DX,invalidMsg    
+    INT 21H
+    JMP MAIN_MENU

@@ -1,0 +1,90 @@
+; VIEW ALL VENUES
+; ==============================
+
+VIEW_ALL_VENUES:
+
+    ; VIEW VENUES CLEAR SCREEN
+    MOV AH,00H
+    MOV AL,03H
+    INT 10H
+
+
+    CMP VENUE1_EXIST,1
+    JE HAS_VENUE
+
+    CMP VENUE2_EXIST,1
+    JE HAS_VENUE
+
+    CMP VENUE3_EXIST,1
+    JE HAS_VENUE
+
+    JMP NO_VENUE
+
+
+HAS_VENUE:
+
+    MOV AH,09H
+    LEA DX,NEWLINE
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,allVenueTitle
+    INT 21H
+
+
+    CMP VENUE1_EXIST,1
+    JNE VIEW2
+
+    CALL SET_VENUE1
+
+    LEA AX,venue1Title
+    MOV CURRENT_TITLE,AX	let venuetitle save in ax then move to current_title. 以后就能用current title来显示当前venue标题
+
+    CALL DISPLAY_VENUE
+
+
+VIEW2:
+
+    CMP VENUE2_EXIST,1
+    JNE VIEW3
+
+    CALL SET_VENUE2
+
+    LEA AX,venue2Title
+    MOV CURRENT_TITLE,AX
+
+    CALL DISPLAY_VENUE
+
+
+VIEW3:
+
+    CMP VENUE3_EXIST,1
+    JNE VIEW_END
+
+    CALL SET_VENUE3
+
+    LEA AX,venue3Title
+    MOV CURRENT_TITLE,AX
+
+    CALL DISPLAY_VENUE
+
+
+VIEW_END:
+
+    MOV AH,09H
+    LEA DX,viewVenueContinueMsg
+    INT 21H
+
+    MOV AH,01H
+    INT 21H
+
+    JMP ADMIN_MENU
+
+
+NO_VENUE:
+
+    MOV AH,09H
+    LEA DX,noVenueMsg
+    INT 21H
+
+    JMP ADMIN_MENU

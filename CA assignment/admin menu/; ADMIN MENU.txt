@@ -1,0 +1,73 @@
+; ADMIN MENU
+; ==============================
+
+ADMIN_MENU:
+
+    ; Clear screen before displaying this function/page
+    MOV AH,00H
+    MOV AL,03H
+    INT 10H
+
+	MOV AH,09h
+	LEA DX,nl ;new line
+	INT 21H
+	
+    MOV AH,09H
+    LEA DX,adminTitle
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,admin1
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,admin2
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,admin3
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,admin4
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,choiceMsg
+    INT 21H
+
+    MOV AH,01H
+    INT 21H
+
+CHECK_ADMIN1:
+    CMP AL,'1'
+    JNE CHECK_ADMIN2
+    JMP VIEW_ALL_VENUES
+
+
+CHECK_ADMIN2:
+
+    CMP AL,'2'
+    JNE CHECK_ADMIN3
+    JMP VIEW_ALL_BOOKINGS
+
+
+CHECK_ADMIN3:
+
+    CMP AL,'3'
+    JNE CHECK_ADMIN4
+    JMP MANAGE_VENUE
+
+
+
+CHECK_ADMIN4:
+
+    CMP AL,'4'
+    JNE ADMIN_INVALID
+    JMP ADMIN_LOGOUT
+
+
+ADMIN_INVALID:
+
+    CALL SHOW_INVALID
+    JMP ADMIN_MENU
